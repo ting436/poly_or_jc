@@ -1,0 +1,43 @@
+Prompt:
+
+prompt_test = f"""I am a student from Bukit Panjang Government High seeking guidance on my future educational and career paths. Here is my profile:
+
+Interests: game development
+Strengths/skills: mathematics
+Academic Scores (L1R5): 6.0
+Learning Preferences: practical experience
+Pursuing University Degree: not sure, but probably yes
+
+In order of importance, these are the key considerations I have in deciding my path.
+1. i would like many internship opporunities
+2. i live in cck
+
+Based on information above, please provide me with 3 personalized recommendations for suitable Junior Colleges (JC) or Polytechnics (Poly). For each recommended institution, include:
+
+    Name of the Institution
+    Reasons why studying in this institution aligns with my preferences
+
+Present the recommendations in a structured format to facilitate easy comparison and understanding. Feel free to add a concluding sentence comparing the institutions.
+
+
+Response:
+Here are three personalized recommendations for suitable Junior Colleges (JC) or Polytechnics (Poly) based on your profile and preferences:
+
+**Recommendation 1:**
+**Institution:** Nanyang Junior College
+**Reasons:**
+- Located near Choa Chu Kang (CCK), aligning with your preference to stay close to home.
+- Offers a strong mathematics curriculum, which aligns with your strength in mathematics.
+- Although internship opportunities are not explicitly mentioned, Nanyang Junior College has a strong reputation for providing students with practical experiences through various programs and partnerships.
+
+**Recommendation 2:**
+**Institution:** Anderson Serangoon Junior College
+**Reasons:**
+- Located in Ang Mo Kio, which is relatively close to Choa Chu Kang (CCK), making it a convenient option.
+- Offers a range of programs that may provide opportunities for practical experience, which aligns with your learning preference.
+- Although not explicitly stated, Anderson Serangoon Junior College has a strong focus on providing students with real-world experiences, which may lead to internship opportunities.
+
+**Recommendation 3:**
+**Institution:** (Polytechnic) Not recommended based on your profile, as Polytechnics may not provide the same level of mathematics curriculum as Junior Colleges.
+
+Comparing the institutions, Nanyang Junior College seems to be the most suitable option, given its proximity to Choa Chu Kang and strong mathematics curriculum. However, Anderson Serangoon Junior College is also a viable option, offering a range of programs that may provide practical experiences and internship opportunities.

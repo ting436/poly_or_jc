@@ -1,0 +1,10 @@
+# Dependency directories
+node_modules/
+
+storage/
+
+structure
+
+# Editor files
+.idea/
+__pycache__/
