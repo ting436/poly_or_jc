@@ -1,16 +1,22 @@
 import os
+
+from llama_index.core.vector_stores import VectorStoreQuery
 from llama_index.llms.groq import Groq
+
+from typing import List
 # from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-from llama_index.core import (
-    VectorStoreIndex,
-    SimpleDirectoryReader,
-    StorageContext,
-    load_index_from_storage,
-    Settings
-)
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import Settings, Document
+
+from mySQL_utils import load_documents
+from TiDB_utils import TiDBVectorStoreManager
+
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -42,35 +48,38 @@ def main():
     Present the recommendations in a structured format to facilitate easy comparison and understanding. Feel free to add a concluding sentence comparing the institutions.
     """
 
-
-    # check if storage already exists
-        
-    PERSIST_DIR = "./storage"
-
+    groq_api_key = os.getenv('GROQ_API_KEY')
     Settings.llm = Groq(model="llama3-70b-8192", api_key=os.getenv('GROQ_API_KEY'))
     Settings.embed_model = HuggingFaceEmbedding(
         model_name="BAAI/bge-small-en-v1.5"
     )
 
-    if not os.path.exists(PERSIST_DIR):
-        # load the documents and create the index
-        documents = SimpleDirectoryReader("data").load_data()
-        index = VectorStoreIndex.from_documents(documents)
-        # store it for later
-        index.storage_context.persist(persist_dir=PERSIST_DIR)
-    else:
-        # load the existing index
-        storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
-        index = load_index_from_storage(storage_context)
+    if not groq_api_key:
+        raise ValueError("GROQ_API_KEY environment variable is not set!")
 
+    manager = TiDBVectorStoreManager()
+
+    def load_docs() -> List[Document]:
+        return load_documents("junior_colleges")  # Your document loading function
+        
+    try:
+        index = manager.create_or_load_index(
+            documents_loader=load_docs,
+            batch_size=1000
+        )
+        # Use index for queries...
+    except Exception as e:
+        logger.error(f"Error in main: {e}")
+        raise
+
+    query_engine = index.as_query_engine()
 
     # Either way we can now query the index
-    query_engine = index.as_query_engine()
-    response = query_engine.query(prompt_test)
-    print(response)
-
-
-
+    try:
+        response = query_engine.query(prompt_test)
+        print(response)
+    except Exception as e:
+        print(f"❌ Error while querying: {e}")
 
 if __name__ == "__main__":
     main()
