@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import logging
 from llama_index.core import StorageContext, VectorStoreIndex, Document
 from llama_index.vector_stores.tidbvector import TiDBVectorStore
-from mySQL_utils import load_documents
+from ConnectionManagers.MySQLManager import load_documents
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
