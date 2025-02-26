@@ -1,6 +1,5 @@
 import os
 
-from llama_index.core.vector_stores import VectorStoreQuery
 from llama_index.llms.groq import Groq
 
 from typing import List
@@ -9,14 +8,11 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 from llama_index.core import Settings, Document
 
-from llama_index.core.memory import ChatMemoryBuffer
-from llama_index.core.chat_engine import CondensePlusContextChatEngine
-
-from mySQL_utils import load_documents
-from TiDB_utils import TiDBVectorStoreManager
-
+from ConnectionManagers.MySQLManager import MySQLManager
+from ConnectionManagers.TiDBVectorStoreManager import TiDBVectorStoreManager
 
 import logging
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -62,8 +58,10 @@ def main():
 
     manager = TiDBVectorStoreManager()
 
+    doc_manager = MySQLManager()
+
     def load_docs() -> List[Document]:
-        return load_documents("junior_colleges")  # Your document loading function
+        return doc_manager.load_documents("junior_colleges")  # Your document loading function
         
     try:
         index = manager.create_or_load_index(
@@ -83,32 +81,6 @@ def main():
         print(response)
     except Exception as e:
         print(f"❌ Error while querying: {e}")
-
-
-    
-    memory = ChatMemoryBuffer.from_defaults(token_limit=3900)
-
-    chat_engine = CondensePlusContextChatEngine.from_defaults(
-        index.as_retriever(),
-        memory=memory,
-        context_prompt=(
-            f"""
-            You are a chatbot, able to have normal interactions.
-            Your main role is to help the user decide whether they want to go poly or JC.
-            Here are the relevant documents for the context:
-            Users input: {prompt_test}
-            Top 3 recommended institutions: {response}
-            Instruction: Use the previous chat history, or the context above, to interact and help the user.
-            """
-        ),
-        verbose=True,
-    )
-
-    while True:
-        response = chat_engine.chat(
-            input("")
-        )
-        print(str(response))
 
 if __name__ == "__main__":
     main()

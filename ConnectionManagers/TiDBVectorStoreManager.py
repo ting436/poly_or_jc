@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import logging
 from llama_index.core import StorageContext, VectorStoreIndex, Document
 from llama_index.vector_stores.tidbvector import TiDBVectorStore
-from ConnectionManagers.MySQLManager import load_documents
+from ConnectionManagers.MySQLManager import MySQLManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ class TiDBVectorStoreManager:
     def __init__(
         self,
         connection_string: str = "mysql+pymysql://3VtFvoqGuf9wE8R.root:S2Ls7Ill5u5kujAU@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_ca=/etc/ssl/cert.pem&ssl_verify_cert=true&ssl_verify_identity=true",
-        table_name: str = "all_schools",
+        table_name: str = "junior_colleges",
         vector_dimension: int = 384,
         distance_strategy: str = "cosine",
     ):
@@ -111,9 +111,10 @@ def main():
         table_name="poly_or_jc",
         vector_dimension=384
     )
+    doc_manager = MySQLManager()
     
     def load_docs() -> List[Document]:
-        return load_documents("junior_colleges")  # Your document loading function
+        return doc_manager.load_documents("junior_colleges")  # Your document loading function
     
     try:
         index = manager.create_or_load_index(
