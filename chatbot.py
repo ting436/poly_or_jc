@@ -89,7 +89,7 @@ Settings.embed_model = HuggingFaceEmbedding(
 
 history = TiDBChatMessageHistory(
     connection_string=tidb_connection_string,
-    session_id="user1",
+    session_id="user3",
 )
 
 memory = ChatMemoryBuffer.from_defaults(token_limit=3900)
@@ -151,12 +151,17 @@ print("ready to chat!")
 
 while True:
     user_text = input("")
+
+    if not user_text:  # Exit if user_input is empty
+        print("Ending chat. Goodbye!")
+        break
+
     user_input = ChatMessage(role=MessageRole.USER, content=user_text)
     add_message(memory, user_input)
+
     response = chat_engine.chat(
         user_text
     )
     assistant_message = ChatMessage(role=MessageRole.ASSISTANT, content=str(response))
     add_message(memory, assistant_message)
     print(str(response))
-
