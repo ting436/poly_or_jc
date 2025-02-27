@@ -8,3 +8,5 @@ structure
 # Editor files
 .idea/
 __pycache__/
+
+.env
