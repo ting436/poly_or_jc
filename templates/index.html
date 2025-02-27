@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Step Form</title>
+    <script src="/static/js/script.js"></script>
+</head>
+<body>
+
+    <!-- First Page: Selection -->
+    <form id="form1">
+
+        <h2>What are the key considerations you have in choosing poly or JC?</h2>
+
+        <label><input type="checkbox" name="key_considerations" id="fees" value="School Fees"> School Fees <br></label>
+        <label><input type="checkbox" name="key_considerations" id="location" value="Location"> Location <br></label>
+        <label><input type="checkbox" name="key_considerations" id="intern_opp" value="Internship Opportunities"> Internship Opportunities <br></label>
+        <label><input type="checkbox" name="key_considerations" id="stress" value="Stress Level"> Stress Level <br></label>
+        <label><input type="checkbox" name="key_considerations" id="career_opp" value="Career Opportunities"> Career Opportunities <br></label>
+        <label><input type="checkbox" name="key_considerations" id="school_env" value="School Environment (e.g., large student body)"> School Environment (e.g., large student body) <br></label>
+        <label><input type="checkbox" name="key_considerations" id="extracurricular" value="CCA/Interest Groups"> CCA/Interest Groups <br></label>
+
+        <button type="button" onclick="hideSubmitButton('form1'); saveSelections()">Next</button>
+    </form>
+
+    <!-- Second Page: Ranking -->
+    <form id="form2" style="display: none;">
+        <h2>Rank Your Considerations</h2>
+        <div id="rankingOptions"></div>
+
+        <button type="button" onclick="hideSubmitButton('form2'); saveRanking()">Next</button>
+    </form>
+
+    <!-- Third Page: Short Answer Questions -->
+    <form id="form3" style="display: none;">
+        <h2>Explain Your Rankings</h2>
+        <div id="shortAnswerQuestions"></div>
+
+        <h2>Other Questions</h2>
+        <div id="personalQuestions">
+            <label>What are your current interests?/ What career paths are you considering for your future? <br>
+                <textarea name="interests" rows="2" cols="50" placeholder="Your answer here..."></textarea>
+            </label><br><br>
+        
+            <label>What is your L1R5 Score? <br>
+                <textarea name="l1r5" rows="2" cols="50" placeholder="Your answer here..."></textarea>
+            </label><br><br>
+        
+            <label>What are your strengths/skills? <br>
+                <textarea name="strengths" rows="2" cols="50" placeholder="Your answer here..."></textarea>
+            </label><br><br>
+        
+            <label>Do you prefer academic, theory-based learning or hands-on, practical experience? <br>
+                <textarea name="learning_style" rows="2" cols="50" placeholder="Your answer here..."></textarea>
+            </label><br><br>
+        
+            <label>Are you focused on entering a specific industry (e.g., design, engineering, business) or do you want a more general university education? <br>
+                <textarea name="education_focus" rows="2" cols="50" placeholder="Your answer here..."></textarea>
+            </label><br><br>
+        </div>
+
+        <button type="submit" onclick="submitForm(event)">Submit</button>
+    </form>
+
+</body>
+</html>
