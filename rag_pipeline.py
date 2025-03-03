@@ -19,40 +19,43 @@ from promptHandling import generate_prompt
 import logging
 
 class RAG_Chat:
+    """Retrieval-Augmented Generation class for educational recommendations."""
+    
     _instance = None
     
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
-
-    """Retrieval-Augmented Generation class for educational recommendations."""
     
     def __init__(self, user_id: str, groq_api_key: Optional[str] = None):
+        if not hasattr(self, 'initialized'):
+                
+            # Configure logging
+            logging.basicConfig(level=logging.INFO)
+            self.logger = logging.getLogger(__name__)
+            
+            # Set environment variable for tokenizers
+            os.environ["TOKENIZERS_PARALLELISM"] = "false"
+            # Initialize settings
+            self._initialize_settings(groq_api_key)
+            self.user_id = user_id
+            
+            # Load the vector index
+            self.index = self._load_index()
 
-        # Configure logging
-        logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger(__name__)
-        
-        # Set environment variable for tokenizers
-        os.environ["TOKENIZERS_PARALLELISM"] = "false"
-        # Initialize settings
-        self._initialize_settings(groq_api_key)
-        self.user_id = user_id
-        
-        # Load the vector index
-        self.index = self._load_index()
+            #Load Initial Prompt
+            self.prompt = generate_prompt()
 
-        #Load Initial Prompt
-        self.prompt = generate_prompt()
+            #Connect to TiDB Chat History
+            self.tidb_str = "mysql+pymysql://3VtFvoqGuf9wE8R.root:S2Ls7Ill5u5kujAU@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_ca=/etc/ssl/cert.pem&ssl_verify_cert=true&ssl_verify_identity=true"
+            self.history = self._connect_tidb()
 
-        #Connect to TiDB Chat History
-        self.tidb_str = "mysql+pymysql://3VtFvoqGuf9wE8R.root:S2Ls7Ill5u5kujAU@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_ca=/etc/ssl/cert.pem&ssl_verify_cert=true&ssl_verify_identity=true"
-        self.history = self._connect_tidb()
+            #Initialise chat engine and store memory
+            self.memory = ChatMemoryBuffer.from_defaults(token_limit=3900)
+            self.chat_engine = self.init_chat_engine()
 
-        #Initialise chat engine and store memory
-        self.memory = ChatMemoryBuffer.from_defaults(token_limit=3900)
-        self.chat_engine = self.init_chat_engine()
+            self.initialized = True
         
     
     def _initialize_settings(self, groq_api_key: Optional[str] = None):
