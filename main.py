@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import List, Optional
@@ -8,6 +8,7 @@ import json
 import os
 from pydantic import BaseModel
 from dotenv import load_dotenv
+import subprocess
 import pymysql
 import pymysql.cursors
 
@@ -15,6 +16,8 @@ import pymysql.cursors
 load_dotenv()
 
 app = FastAPI()
+
+sqlmanager = MySQLManager
 
 # Configure database connection
 # Change your get_db_connection function
@@ -75,9 +78,17 @@ class FormData(BaseModel):
 async def get_form(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+def run_files_sequence(file):
+    # Run first file
+    result = subprocess.run(["python", file], capture_output=True, text=True)
+    print(result.stdout)
+    
+    # Log results or store in database
+    print(f"First file completed with return code {result.returncode}")
+
 # API endpoint to handle form data directly from JavaScript
 @app.post("/api/submit")
-async def api_submit_form(form_data: dict):
+async def api_submit_form(background_tasks: BackgroundTasks, form_data: dict):
     # Extract data from JSON payload
     key_considerations = form_data.get("key_considerations", [])
     rankings = form_data.get("rankings", {})
@@ -113,8 +124,11 @@ async def api_submit_form(form_data: dict):
     conn.commit()
     cursor.close()
     conn.close()
-    
+
+    background_tasks.add_task(run_files_sequence, "pipeline.py")
+
     return {"status": "success", "message": "Form submitted successfully"}
+
 
 if __name__ == "__main__":
     import uvicorn
