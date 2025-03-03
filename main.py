@@ -17,19 +17,6 @@ load_dotenv()
 
 app = FastAPI()
 
-sqlmanager = MySQLManager
-
-# Configure database connection
-# Change your get_db_connection function
-def get_db_connection():
-    return pymysql.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", ""),
-        database=os.getenv("DB_NAME", ""),
-        cursorclass=pymysql.cursors.DictCursor
-    )
-
 # Serve static files (your HTML, CSS, JS)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -37,7 +24,8 @@ templates = Jinja2Templates(directory="templates")
 # Create database and tables if they don't exist
 @app.on_event("startup")
 async def startup_db_client():
-    conn = get_db_connection()
+    sqlmanager = MySQLManager()
+    conn = sqlmanager.get_connection()
     cursor = conn.cursor()
     
     # Create database if it doesn't exist
@@ -100,7 +88,8 @@ async def api_submit_form(background_tasks: BackgroundTasks, form_data: dict):
     education_focus = form_data.get("education_focus", "")
     
     # Store in database
-    conn = get_db_connection()
+    sqlmanager = MySQLManager()
+    conn = sqlmanager.get_connection()
     cursor = conn.cursor()
     
     query = """
