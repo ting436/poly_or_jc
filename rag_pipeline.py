@@ -12,7 +12,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
 
 from ConnectionManagers.MySQLManager import MySQLManager
-from ConnectionManagers.TiDBVectorStoreManager import TiDBVectorStoreManager
+from ConnectionManagers.TiDBManager import TiDBManager
 from promptHandling import generate_prompt
 
 
@@ -20,7 +20,7 @@ import logging
 
 class RAG_Chat:
     """Retrieval-Augmented Generation class for educational recommendations."""
-    
+
     _instance = None
     
     def __new__(cls, *args, **kwargs):
@@ -48,7 +48,6 @@ class RAG_Chat:
             self.prompt = generate_prompt()
 
             #Connect to TiDB Chat History
-            self.tidb_str = "mysql+pymysql://3VtFvoqGuf9wE8R.root:S2Ls7Ill5u5kujAU@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_ca=/etc/ssl/cert.pem&ssl_verify_cert=true&ssl_verify_identity=true"
             self.history = self._connect_tidb()
 
             #Initialise chat engine and store memory
@@ -72,7 +71,7 @@ class RAG_Chat:
     def _load_index(self):
         """Create or load the vector index."""
         # Create vector store manager
-        vector_store_manager = TiDBVectorStoreManager()
+        vector_store_manager = TiDBManager()
         doc_manager = MySQLManager()
 
         try:
@@ -102,7 +101,8 @@ class RAG_Chat:
             print(f"❌ Error while querying: {e}")
 
     def _connect_tidb(self):
-        tidb_connection_string = self.tidb_str
+        tidbmanager = TiDBManager()
+        tidb_connection_string = tidbmanager.connection_string
 
         history = TiDBChatMessageHistory(
             connection_string=tidb_connection_string,

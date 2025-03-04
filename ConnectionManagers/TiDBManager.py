@@ -5,24 +5,33 @@ import logging
 from llama_index.core import StorageContext, VectorStoreIndex, Document
 from llama_index.vector_stores.tidbvector import TiDBVectorStore
 from ConnectionManagers.MySQLManager import MySQLManager
+from dotenv import load_dotenv
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class TiDBVectorStoreManager:
+load_dotenv()
+
+class TiDBManager:
     def __init__(
         self,
-        connection_string: str = "mysql+pymysql://3VtFvoqGuf9wE8R.root:S2Ls7Ill5u5kujAU@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_ca=/etc/ssl/cert.pem&ssl_verify_cert=true&ssl_verify_identity=true",
         table_name: str = "junior_colleges",
         vector_dimension: int = 384,
         distance_strategy: str = "cosine",
     ):
-        self.connection_string = connection_string
+        self.connection_string = (
+            f"mysql+pymysql://{os.getenv('TIDB_USER')}:{os.getenv('TIDB_PASSWORD')}"
+            f"@{os.getenv('TIDB_HOST')}:{os.getenv('TIDB_PORT', '4000')}"
+            f"/{os.getenv('TIDB_DATABASE')}?ssl_ca=/etc/ssl/cert.pem"
+            "&ssl_verify_cert=true&ssl_verify_identity=true"
+        )
+        
         self.table_name = table_name
         self.vector_dimension = vector_dimension
         self.distance_strategy = distance_strategy
         self.engine = create_engine(
-            connection_string,
+            self.connection_string,
             pool_pre_ping=True,  # Enable connection health checks
             pool_recycle=3600,   # Recycle connections after 1 hour
             pool_size=5,         # Maximum number of connections
@@ -102,29 +111,3 @@ class TiDBVectorStoreManager:
         except Exception as e:
             logger.error(f"Error creating/loading index: {e}")
             raise
-
-# Example usage
-def main():
-    connection_string = "mysql+pymysql://3VtFvoqGuf9wE8R.root:S2Ls7Ill5u5kujAU@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_ca=/etc/ssl/cert.pem&ssl_verify_cert=true&ssl_verify_identity=true"
-    manager = TiDBVectorStoreManager(
-        connection_string=connection_string,
-        table_name="poly_or_jc",
-        vector_dimension=384
-    )
-    doc_manager = MySQLManager()
-    
-    def load_docs() -> List[Document]:
-        return doc_manager.load_documents("junior_colleges")  # Your document loading function
-    
-    try:
-        index = manager.create_or_load_index(
-            documents_loader=load_docs,
-            batch_size=1000
-        )
-        # Use index for queries...
-    except Exception as e:
-        logger.error(f"Error in main: {e}")
-        raise
-
-if __name__ == "__main__":
-    main()
