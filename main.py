@@ -1,9 +1,11 @@
-from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi import FastAPI, Request, BackgroundTasks, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import List, Optional
 from ConnectionManagers.MySQLManager import MySQLManager
+from rag_pipeline import RAG_Chat
 import json
 import os
 from pydantic import BaseModel
@@ -16,6 +18,15 @@ import pymysql.cursors
 load_dotenv()
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Serve static files (your HTML, CSS, JS)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -66,17 +77,10 @@ class FormData(BaseModel):
 async def get_form(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-def run_files_sequence(file):
-    # Run first file
-    result = subprocess.run(["python", file], capture_output=True, text=True)
-    print(result.stdout)
-    
-    # Log results or store in database
-    print(f"First file completed with return code {result.returncode}")
 
 # API endpoint to handle form data directly from JavaScript
 @app.post("/api/submit")
-async def api_submit_form(background_tasks: BackgroundTasks, form_data: dict):
+async def api_submit_form(form_data: dict):
     # Extract data from JSON payload
     key_considerations = form_data.get("key_considerations", [])
     rankings = form_data.get("rankings", {})
@@ -114,10 +118,31 @@ async def api_submit_form(background_tasks: BackgroundTasks, form_data: dict):
     cursor.close()
     conn.close()
 
-    background_tasks.add_task(run_files_sequence, "pipeline.py")
-
     return {"status": "success", "message": "Form submitted successfully"}
 
+
+# Initialize RAG instance
+rag = RAG_Chat(user_id="student6")
+
+@app.post("/api/recommendations")
+async def get_recommendations():
+    try:
+        # Use your pipeline
+        response = rag.get_recommendations()
+        return {"recommendations": response}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.websocket("/ws/chat")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            message = await websocket.receive_text()
+            response = rag.chat(message)
+            await websocket.send_text(str(response))
+    except Exception as e:
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     import uvicorn

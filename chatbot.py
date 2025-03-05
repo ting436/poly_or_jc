@@ -4,7 +4,7 @@ from rag_pipeline import RAG_Chat
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
-rag = RAG_Chat(user_id="student1")
+rag = RAG_Chat(user_id="student5")
 
 rag._load_from_tidb()
 
