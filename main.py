@@ -129,7 +129,7 @@ async def get_recommendations():
     try:
         # Use your pipeline
         response = rag.get_recommendations()
-        return {"recommendations": response}
+        return str(response)
     except Exception as e:
         return {"error": str(e)}
 

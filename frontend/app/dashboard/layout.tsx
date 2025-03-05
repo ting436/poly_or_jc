@@ -10,11 +10,11 @@ export default function DashboardLayout({
   const pathname = usePathname()
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen">  {/* This ensures full height */}
       {/* Sidebar */}
-      <div className="w-64 bg-gray-800 text-white p-4">
+      <div className="w-64 bg-gray-800 text-white p-4 flex flex-col">  {/* Added flex flex-col */}
         <h1 className="text-2xl font-bold mb-8">Hi there</h1>
-        <nav className="space-y-2">
+        <nav className="space-y-2 flex-1">  {/* Added flex-1 */}
           <Link 
             href="/dashboard"
             className={`block p-2 rounded ${
@@ -43,7 +43,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Main content */}
-      <div className="flex-1 p-8 bg-gray-100">
+      <div className="flex-1 bg-gray-100 overflow-auto">  {/* Added overflow-auto */}
         {children}
       </div>
     </div>

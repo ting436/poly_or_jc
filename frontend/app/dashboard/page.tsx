@@ -1,7 +1,10 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'  // Add this import
+
 
 export default function FormPage() {
+  const router = useRouter() 
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     // Step 1: Key Considerations Checkboxes
@@ -190,8 +193,20 @@ export default function FormPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submissionData)
       })
-      const data = await response.json()
-      console.log(data)
+      // Then get recommendations
+      const recsResponse = await fetch('http://127.0.0.1:8000/api/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const recommendations = await recsResponse.json()
+
+      localStorage.removeItem('chatMessages')
+      
+      // Store recommendations in localStorage
+      localStorage.setItem('recommendations', JSON.stringify(recommendations))
+      
+      // Redirect to recommendations page
+      router.push('/dashboard/recommendations')
     } catch (error) {
       console.error('Error:', error)
     }

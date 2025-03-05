@@ -19,25 +19,43 @@ def get_db_connection():
 
 def format_key_considerations(considerations, rankings, explanations):
     """Format key considerations with rankings and explanations"""
-    # Create a dictionary to map each consideration to its ranking
-    ranked_considerations = {}
-    for ranking in rankings:
-        ranked_considerations[f"{ranking['name']},{ranking['id']}"] = int(ranking['value'])
+    # Convert the new format to the old format
+    # First, convert considerations dict to list of selected items
+    selected_considerations = [
+        {"id": key, "name": get_consideration_name(key)}
+        for key, value in considerations.items()
+        if value == True
+    ]
 
+    # Convert rankings dict to list format
+    rankings_list = [
+        {"id": key, "name": get_consideration_name(key), "value": int(value)}
+        for key, value in rankings.items()
+    ]
 
     # Sort considerations by their ranking
-    sorted_considerations = sorted(ranked_considerations.items(), key=lambda x: x[1])
+    sorted_considerations = sorted(rankings_list, key=lambda x: x['value'])
 
     # Format the considerations with explanations
     formatted_text = ""
-    for consideration, rank in sorted_considerations:
-        # Look for explanation in the explanations dictionary
-        explanation_name, explanation_key = consideration.split(",")
-        explanation = explanations.get(explanation_key, "")
-        
-        formatted_text += f"{rank}. {explanation_name}: {explanation}\n"
+    for consideration in sorted_considerations:
+        explanation = explanations.get(consideration['id'], "")
+        formatted_text += f"{consideration['value']}. {consideration['name']}: {explanation}\n"
 
     return formatted_text
+
+def get_consideration_name(key):
+    """Helper function to map keys to their display names"""
+    consideration_names = {
+        "fees": "School Fees",
+        "location": "Location",
+        "intern_opp": "Internship Opportunities",
+        "stress": "Stress Level",
+        "career_opp": "Career Opportunities",
+        "school_env": "School Environment",
+        "extracurricular": "CCA/Interest Groups"
+    }
+    return consideration_names.get(key, key)
 
 def generate_prompt(student_id=None):
     """Generate a prompt based on the student's responses"""
