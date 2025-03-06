@@ -1,17 +1,23 @@
-import Link from 'next/link'
+'use client'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
-  return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-6">Welcome to Your App</h1>
-        <Link 
-          href="/dashboard" 
-          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg"
-        >
-          Go to Dashboard
-        </Link>
-      </div>
-    </main>
-  )
+  const router = useRouter()
+
+  useEffect(() => {
+    // Clear all storage
+    localStorage.clear()
+    
+    // Call cleanup API
+    fetch('http://127.0.0.1:8000/api/cleanup', {
+      method: 'POST',
+    })
+    .then(() => {
+      router.push('/dashboard/')
+    })
+    .catch(console.error)
+  }, [])
+
+  return <div>Loading...</div>
 }

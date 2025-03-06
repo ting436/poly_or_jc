@@ -81,6 +81,8 @@ async def get_form(request: Request):
 # API endpoint to handle form data directly from JavaScript
 @app.post("/api/submit")
 async def api_submit_form(form_data: dict):
+
+    cursor.execute("DELETE FROM student_responses")
     # Extract data from JSON payload
     key_considerations = form_data.get("key_considerations", [])
     rankings = form_data.get("rankings", {})
@@ -122,7 +124,7 @@ async def api_submit_form(form_data: dict):
 
 
 # Initialize RAG instance
-rag = RAG_Chat(user_id="student6")
+rag = RAG_Chat(user_id="student8")
 
 @app.post("/api/recommendations")
 async def get_recommendations():

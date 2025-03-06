@@ -29,12 +29,12 @@ def format_key_considerations(considerations, rankings, explanations):
 
     # Convert rankings dict to list format
     rankings_list = [
-        {"id": key, "name": get_consideration_name(key), "value": int(value)}
+        {"id": key, "name": get_consideration_name(key), "value": value if value and value.strip() else "0"}
         for key, value in rankings.items()
     ]
 
     # Sort considerations by their ranking
-    sorted_considerations = sorted(rankings_list, key=lambda x: x['value'])
+    sorted_considerations = sorted(rankings_list, key=lambda x: int(x['value']))
 
     # Format the considerations with explanations
     formatted_text = ""
@@ -57,18 +57,13 @@ def get_consideration_name(key):
     }
     return consideration_names.get(key, key)
 
-def generate_prompt(student_id=None):
+def generate_prompt():
     """Generate a prompt based on the student's responses"""
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     
-    # Get the most recent entry if no ID is specified
-    if student_id is None:
-        query = "SELECT * FROM student_responses ORDER BY submission_date DESC LIMIT 1"
-        cursor.execute(query)
-    else:
-        query = "SELECT * FROM student_responses WHERE id = %s"
-        cursor.execute(query, (student_id,))
+    query = "SELECT * FROM student_responses ORDER BY id desc LIMIT 1"
+    cursor.execute(query)
     
     student_data = cursor.fetchone()
     cursor.close()
