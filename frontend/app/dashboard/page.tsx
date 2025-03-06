@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'  // Add this import
 export default function FormPage() {
   const router = useRouter() 
   const [step, setStep] = useState(1)
+  const [validationError, setValidationError] = useState('')
   const [formData, setFormData] = useState({
     // Step 1: Key Considerations Checkboxes
     key_considerations: {
@@ -30,6 +31,20 @@ export default function FormPage() {
     }
   })
 
+  const LOCATION_OPTIONS = [
+    "North",
+    "South",
+    "East",
+    "West",
+    "Central"
+  ]
+  
+  const FEES_OPTIONS = [
+    "Below $500/month",
+    "$500-$1000/month",
+    "Above $1000/month"
+  ]
+
   const considerations = {
     fees: "School Fees",
     location: "Location",
@@ -40,9 +55,54 @@ export default function FormPage() {
     extracurricular: "CCA/Interest Groups"
   }
 
+  const validateRankings = () => {
+    const selectedConsiderations = Object.keys(formData.rankings)
+    
+    // Check if all considerations have been ranked
+    const missingRankings = selectedConsiderations.filter(key => 
+      !formData.rankings[key] || formData.rankings[key] === ''
+    )
+    
+    if (missingRankings.length > 0) {
+      setValidationError('Please rank all of your selected considerations')
+      return false
+    }
+    
+    // Convert ranking values to numbers
+    const rankingValues = selectedConsiderations.map(key => Number(formData.rankings[key]))
+    
+    // Check for duplicate rankings
+    const uniqueRankings = new Set(rankingValues)
+    if (uniqueRankings.size !== selectedConsiderations.length) {
+      setValidationError('Please assign a unique rank to each consideration')
+      return false
+    }
+    
+    // Check if rankings are within valid range (1 to total number of considerations)
+    const maxRank = selectedConsiderations.length
+    const hasInvalidRank = rankingValues.some(rank => rank < 1 || rank > maxRank || !Number.isInteger(rank))
+    
+    if (hasInvalidRank) {
+      setValidationError(`Please rank from 1 to ${maxRank} without skipping numbers`)
+      return false
+    }
+    
+    // All validations passed
+    setValidationError('')
+    return true
+  }
+
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault()
     if (step === 1) {
+      // Check if at least one consideration is selected
+      const hasSelections = Object.values(formData.key_considerations).some(checked => checked)
+      
+      if (!hasSelections) {
+        setValidationError('Please select at least one consideration')
+        return
+      }
+      
       // Initialize rankings for selected considerations
       const selectedConsiderations = Object.entries(formData.key_considerations)
         .filter(([_, checked]) => checked)
@@ -55,10 +115,18 @@ export default function FormPage() {
         ...prev,
         rankings: selectedConsiderations
       }))
+      
+      setValidationError('')
+    } else if (step === 2) {
+      // Validate rankings before proceeding
+      if (!validateRankings()) {
+        return
+      }
     }
+    
     setStep(step + 1)
   }
-
+  
   const renderStep = () => {
     switch(step) {
       case 1:
@@ -117,6 +185,9 @@ export default function FormPage() {
                 </div>
               ))}
             </div>
+            {validationError && (
+              <p className="text-red-500 mt-2">{validationError}</p>
+            )}
           </div>
         )
 
@@ -130,6 +201,41 @@ export default function FormPage() {
                   <label className="block font-medium">
                     Why did you rank {considerations[key]} as {formData.rankings[key]}?
                   </label>
+                  {key === 'fees' ? (
+              <select
+                value={formData.explanations[key] || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  explanations: {
+                    ...formData.explanations,
+                    [key]: e.target.value
+                  }
+                })}
+                className="w-full p-2 border rounded"
+              >
+                <option value="">Select fee range</option>
+                {FEES_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            ) : key === 'location' ? (
+              <select
+                value={formData.explanations[key] || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  explanations: {
+                    ...formData.explanations,
+                    [key]: e.target.value
+                  }
+                })}
+                className="w-full p-2 border rounded"
+              >
+                <option value="">Select location preference</option>
+                {LOCATION_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            ) : (
                   <textarea
                     value={formData.explanations[key] || ''}
                     onChange={(e) => setFormData({
@@ -141,6 +247,7 @@ export default function FormPage() {
                     })}
                     className="w-full p-2 border rounded h-24"
                   />
+                  )}
                 </div>
               ))}
             </div>
