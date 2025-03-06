@@ -44,9 +44,6 @@ class RAG_Chat:
             # Load the vector index
             self.index = self._load_index()
 
-            #Load Initial Prompt
-            self.prompt = generate_prompt()
-
             #Connect to TiDB Chat History
             self.history = self._connect_tidb()
 
@@ -85,14 +82,15 @@ class RAG_Chat:
             self.logger.error(f"Error loading index: {e}")
             raise
     
-    def get_recommendations(self):
+    def get_recommendations(self, id):
         index = self.index
         query_engine = index.as_query_engine()
+        prompt = generate_prompt(id)
 
         # Either way we can now query the index
         try:
-            response = query_engine.query(self.prompt)
-            user_input = ChatMessage(role=MessageRole.USER, content=self.prompt)
+            response = query_engine.query(prompt)
+            user_input = ChatMessage(role=MessageRole.USER, content=prompt)
             self.add_message(self.memory, user_input)
             assistant_message = ChatMessage(role=MessageRole.ASSISTANT, content=str(response))
             self.add_message(self.memory, assistant_message)

@@ -1,9 +1,19 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function RecommendationsPage() {
+  const router = useRouter()
   const [recommendations, setRecommendations] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    const recommendations = localStorage.getItem('recommendations')
+    if (!recommendations) {
+      // No recent form submission
+      router.push('/dashboard/')
+    }
+  }, [router])
 
   useEffect(() => {
     const storedRecs = localStorage.getItem('recommendations')

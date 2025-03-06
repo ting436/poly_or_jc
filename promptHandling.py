@@ -57,13 +57,13 @@ def get_consideration_name(key):
     }
     return consideration_names.get(key, key)
 
-def generate_prompt():
+def generate_prompt(id):
     """Generate a prompt based on the student's responses"""
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     
-    query = "SELECT * FROM student_responses ORDER BY id desc LIMIT 1"
-    cursor.execute(query)
+    query = "SELECT * FROM student_responses WHERE id = %s"
+    cursor.execute(query, (id,))
     
     student_data = cursor.fetchone()
     cursor.close()

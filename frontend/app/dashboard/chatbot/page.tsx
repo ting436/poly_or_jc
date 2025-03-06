@@ -15,7 +15,7 @@ export default function ChatPage() {
     const recommendations = localStorage.getItem('recommendations')
     if (!recommendations) {
       // No recent form submission
-      router.push('/dashboard/form')
+      router.push('/dashboard/')
     }
   }, [router])
 

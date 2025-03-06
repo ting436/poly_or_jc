@@ -188,16 +188,30 @@ export default function FormPage() {
         rankings: formData.rankings,
         explanations: formData.explanations
       }
-      const response = await fetch('http://127.0.0.1:8000/api/submit', {
+      const submitResponse = await fetch('http://127.0.0.1:8000/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submissionData)
       })
-      // Then get recommendations
-      const recsResponse = await fetch('http://127.0.0.1:8000/api/recommendations', {
+
+      console.log('Response status:', submitResponse.status)  // Debug log
+      
+      const responseText = await submitResponse.text()
+      console.log('Raw response:', responseText)  // Debug log
+      
+      const submitData = JSON.parse(responseText)
+      console.log('Parsed response:', submitData)  // Debug log
+  
+      if (!submitData.id) {
+        console.error('Response data:', submitData)  // Debug log
+        throw new Error('No ID returned from form submission')
+      }
+
+      const recsResponse = await fetch(`http://127.0.0.1:8000/api/recommendations/${submitData.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
+  
       const recommendations = await recsResponse.json()
 
       localStorage.removeItem('chatMessages')

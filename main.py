@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, BackgroundTasks, WebSocket
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -10,10 +10,6 @@ import json
 import os
 from pydantic import BaseModel
 from dotenv import load_dotenv
-import subprocess
-import pymysql
-import pymysql.cursors
-
 # Load environment variables
 load_dotenv()
 
@@ -82,7 +78,6 @@ async def get_form(request: Request):
 @app.post("/api/submit")
 async def api_submit_form(form_data: dict):
 
-    cursor.execute("DELETE FROM student_responses")
     # Extract data from JSON payload
     key_considerations = form_data.get("key_considerations", [])
     rankings = form_data.get("rankings", {})
@@ -97,6 +92,8 @@ async def api_submit_form(form_data: dict):
     sqlmanager = MySQLManager()
     conn = sqlmanager.get_connection()
     cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM student_responses")
     
     query = """
     INSERT INTO student_responses 
@@ -117,21 +114,27 @@ async def api_submit_form(form_data: dict):
     
     cursor.execute(query, values)
     conn.commit()
+
+    new_id = cursor.lastrowid
+    response = {"id": new_id}
+    
     cursor.close()
     conn.close()
 
-    return {"status": "success", "message": "Form submitted successfully"}
+    return response
 
 
 # Initialize RAG instance
 rag = RAG_Chat(user_id="student8")
 
-@app.post("/api/recommendations")
-async def get_recommendations():
+@app.post("/api/recommendations/{id}")
+async def get_recommendations(id):
     try:
         # Use your pipeline
-        response = rag.get_recommendations()
-        return str(response)
+        response = rag.get_recommendations(id)
+        # Convert response to HTML-friendly format
+        response_str = str(response)
+        return response_str
     except Exception as e:
         return {"error": str(e)}
 
