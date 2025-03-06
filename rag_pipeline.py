@@ -74,7 +74,7 @@ class RAG_Chat:
         try:
             # Create or load the index
             index = vector_store_manager.create_or_load_index(
-                documents_loader=doc_manager.load_documents("junior_colleges"),
+                documents=doc_manager.load_documents("junior_colleges"),
                 batch_size=1000
             )
             return index

@@ -73,7 +73,7 @@ class TiDBManager:
 
     def create_or_load_index(
         self,
-        documents_loader: Optional[callable] = None,
+        documents: Optional[callable] = None,
         batch_size: int = 1000
     ) -> VectorStoreIndex:
         """
@@ -91,7 +91,6 @@ class TiDBManager:
                     return index
                 
                 logger.info("❌ Vector store not initialized. Creating new index...")
-                documents = documents_loader()
                 logger.info(f"Loaded {len(documents)} documents")
                 
                 storage_context = StorageContext.from_defaults(vector_store=vector_store)

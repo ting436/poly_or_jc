@@ -125,7 +125,7 @@ async def api_submit_form(form_data: dict):
 
 
 # Initialize RAG instance
-rag = RAG_Chat(user_id="student8")
+rag = RAG_Chat(user_id="student10")
 
 @app.post("/api/recommendations/{id}")
 async def get_recommendations(id):
