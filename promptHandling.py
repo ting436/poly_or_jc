@@ -17,15 +17,10 @@ def get_db_connection():
         cursorclass=pymysql.cursors.DictCursor
     )
 
-def format_key_considerations(considerations, rankings, explanations):
+def format_key_considerations(rankings, explanations):
     """Format key considerations with rankings and explanations"""
     # Convert the new format to the old format
     # First, convert considerations dict to list of selected items
-    selected_considerations = [
-        {"id": key, "name": get_consideration_name(key)}
-        for key, value in considerations.items()
-        if value == True
-    ]
 
     # Convert rankings dict to list format
     rankings_list = [
@@ -57,7 +52,7 @@ def get_consideration_name(key):
     }
     return consideration_names.get(key, key)
 
-def generate_prompt(id):
+def retrieve_sdata(id):
     """Generate a prompt based on the student's responses"""
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -72,17 +67,31 @@ def generate_prompt(id):
     if not student_data:
         return "No student data found."
     
+
+    return student_data
+
+def extract_key_considerations(student_data):
+
     # Parse JSON fields
-    considerations = json.loads(student_data['considerations'])
     rankings = json.loads(student_data['rankings'])
     explanations = json.loads(student_data['explanations'])
     
-    # Determine school (placeholder, you might want to collect this in your form)
-    school = "Singapore Secondary School"  # Default value
     
     # Format key considerations
-    key_considerations_text = format_key_considerations(considerations, rankings, explanations)
-    
+    key_considerations_text = format_key_considerations(rankings, explanations)
+
+    return key_considerations_text
+
+def json_considerations(student_data):
+    explanations = json.loads(student_data['explanations'])
+    return explanations
+
+
+def generate_prompt(student_data, key_considerations_text):
+
+
+    # Determine school (placeholder, you might want to collect this in your form)
+    school = "Singapore Secondary School"  # Default value
     # Create prompt
     prompt = f"""I am a student from {school} seeking guidance on my future educational and career paths. Here is my profile:
 
@@ -104,8 +113,3 @@ def generate_prompt(id):
     """
     
     return prompt
-
-
-    
-
-

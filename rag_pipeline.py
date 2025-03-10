@@ -6,17 +6,22 @@ from langchain_community.chat_message_histories import TiDBChatMessageHistory
 from llama_index.core.llms import MessageRole, ChatMessage
 from llama_index.core.chat_engine import CondensePlusContextChatEngine
 
-from llama_index.llms.groq import Groq
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-
+from config import initialize_settings
 from llama_index.core import Settings
 
 from ConnectionManagers.MySQLManager import MySQLManager
 from ConnectionManagers.TiDBManager import TiDBManager
-from promptHandling import generate_prompt
-
+from promptHandling import retrieve_sdata, extract_key_considerations, json_considerations, generate_prompt
+from dotenv import load_dotenv
 
 import logging
+
+from llama_index.core.vector_stores.types import (
+    MetadataFilter,
+    MetadataFilters,
+)
+
+load_dotenv()
 
 class RAG_Chat:
     """Retrieval-Augmented Generation class for educational recommendations."""
@@ -38,7 +43,7 @@ class RAG_Chat:
             # Set environment variable for tokenizers
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
             # Initialize settings
-            self._initialize_settings(groq_api_key)
+            initialize_settings()
             self.user_id = user_id
             
             # Load the vector index
@@ -52,18 +57,7 @@ class RAG_Chat:
             self.chat_engine = self.init_chat_engine()
 
             self.initialized = True
-        
     
-    def _initialize_settings(self, groq_api_key: Optional[str] = None):
-        """Initialize the global settings for the LLM and embedding models."""
-        api_key = groq_api_key or os.getenv('GROQ_API_KEY')
-        if not api_key:
-            raise ValueError("GROQ_API_KEY not provided and not found in environment variables!")
-        
-        Settings.llm = Groq(model="llama3-70b-8192", api_key=api_key)
-        Settings.embed_model = HuggingFaceEmbedding(
-            model_name="BAAI/bge-small-en-v1.5"
-        )
 
     def _load_index(self):
         """Create or load the vector index."""
@@ -73,23 +67,40 @@ class RAG_Chat:
 
         try:
             # Create or load the index
+            documents = doc_manager.load_documents("junior_colleges")
             index = vector_store_manager.create_or_load_index(
-                documents=doc_manager.load_documents("junior_colleges"),
+                documents=documents,
                 batch_size=1000
             )
             return index
         except Exception as e:
             self.logger.error(f"Error loading index: {e}")
             raise
-    
     def get_recommendations(self, id):
         index = self.index
-        query_engine = index.as_query_engine()
-        prompt = generate_prompt(id)
-
+        query_engine = index.as_query_engine(similarity_top_k=10)
+        student_data = retrieve_sdata(id)
+        considerations = extract_key_considerations(student_data=student_data)
+        prompt = generate_prompt(student_data=student_data, key_considerations_text=considerations)
+        explanations = json_considerations(student_data=student_data)
+        query_engine = index.as_query_engine(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="zone_code", value=explanations['location'].upper(), operator="=="),
+                ]
+            ),
+            similarity_top_k=3,
+        )
         # Either way we can now query the index
         try:
             response = query_engine.query(prompt)
+            print("\nDebug - Retrieved Documents:")
+            for i, node in enumerate(response.source_nodes):
+                print(f"\nNode {i + 1}:")
+                print(f"Content: {node.text[:200]}...")
+                print(f"Score: {node.score}")
+                print(f"Metadata: {node.metadata}")
+        
             user_input = ChatMessage(role=MessageRole.USER, content=prompt)
             self.add_message(self.memory, user_input)
             assistant_message = ChatMessage(role=MessageRole.ASSISTANT, content=str(response))
@@ -153,6 +164,22 @@ class RAG_Chat:
 
         response = self.chat_engine.chat(
             user_text
+        )
+
+        assistant_message = ChatMessage(role=MessageRole.ASSISTANT, content=str(response))
+        self.add_message(self.memory, assistant_message)
+        return str(response)
+    
+    def get_rec(self, id):
+
+        student_data = retrieve_sdata(id)
+        considerations = extract_key_considerations(student_data=student_data)
+        prompt = generate_prompt(student_data=student_data, key_considerations_text=considerations) + "GIve only 3 reccs"
+        user_input = ChatMessage(role=MessageRole.USER, content=prompt)
+        self.add_message(self.memory, user_input)
+
+        response = self.chat_engine.chat(
+            prompt
         )
 
         assistant_message = ChatMessage(role=MessageRole.ASSISTANT, content=str(response))

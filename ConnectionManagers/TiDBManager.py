@@ -1,12 +1,14 @@
 from sqlalchemy import create_engine, text
-from typing import Optional, List
+from typing import Optional
 from contextlib import contextmanager
 import logging
-from llama_index.core import StorageContext, VectorStoreIndex, Document
+from llama_index.core import StorageContext, VectorStoreIndex
+
 from llama_index.vector_stores.tidbvector import TiDBVectorStore
-from ConnectionManagers.MySQLManager import MySQLManager
 from dotenv import load_dotenv
+
 import os
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,7 +18,7 @@ load_dotenv()
 class TiDBManager:
     def __init__(
         self,
-        table_name: str = "junior_colleges",
+        table_name: str = "poly_or_jc",
         vector_dimension: int = 384,
         distance_strategy: str = "cosine",
     ):
@@ -26,13 +28,13 @@ class TiDBManager:
             f"/{os.getenv('TIDB_DATABASE')}?ssl_ca=/etc/ssl/cert.pem"
             "&ssl_verify_cert=true&ssl_verify_identity=true"
         )
-        
+
         self.table_name = table_name
         self.vector_dimension = vector_dimension
         self.distance_strategy = distance_strategy
         self.engine = create_engine(
             self.connection_string,
-            pool_pre_ping=True,  # Enable connection health checks
+            pool_pre_ping=False,  # Enable connection health checks
             pool_recycle=3600,   # Recycle connections after 1 hour
             pool_size=5,         # Maximum number of connections
             max_overflow=10      # Maximum number of connections that can be created beyond pool_size
