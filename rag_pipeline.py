@@ -67,7 +67,9 @@ class RAG_Chat:
 
         try:
             # Create or load the index
-            documents = doc_manager.load_documents("junior_colleges")
+            doc1 = doc_manager.load_documents("junior_colleges")
+            doc2 = doc_manager.load_documents("polytechnics")
+            documents = doc1 + doc2
             index = vector_store_manager.create_or_load_index(
                 documents=documents,
                 batch_size=1000
@@ -76,38 +78,6 @@ class RAG_Chat:
         except Exception as e:
             self.logger.error(f"Error loading index: {e}")
             raise
-    def get_recommendations(self, id):
-        index = self.index
-        query_engine = index.as_query_engine(similarity_top_k=10)
-        student_data = retrieve_sdata(id)
-        considerations = extract_key_considerations(student_data=student_data)
-        prompt = generate_prompt(student_data=student_data, key_considerations_text=considerations)
-        explanations = json_considerations(student_data=student_data)
-        query_engine = index.as_query_engine(
-            filters=MetadataFilters(
-                filters=[
-                    MetadataFilter(key="zone_code", value=explanations['location'].upper(), operator="=="),
-                ]
-            ),
-            similarity_top_k=3,
-        )
-        # Either way we can now query the index
-        try:
-            response = query_engine.query(prompt)
-            print("\nDebug - Retrieved Documents:")
-            for i, node in enumerate(response.source_nodes):
-                print(f"\nNode {i + 1}:")
-                print(f"Content: {node.text[:200]}...")
-                print(f"Score: {node.score}")
-                print(f"Metadata: {node.metadata}")
-        
-            user_input = ChatMessage(role=MessageRole.USER, content=prompt)
-            self.add_message(self.memory, user_input)
-            assistant_message = ChatMessage(role=MessageRole.ASSISTANT, content=str(response))
-            self.add_message(self.memory, assistant_message)
-            return(response)
-        except Exception as e:
-            print(f"❌ Error while querying: {e}")
 
     def _connect_tidb(self):
         tidbmanager = TiDBManager()
@@ -150,15 +120,26 @@ class RAG_Chat:
                 f"""
                 You are a chatbot, able to have normal interactions.
                 Your main role is to help the user decide whether they want to go poly or JC.
-                Instruction: Use the previous chat history to interact and help the user.
+                Instruction: Use the previous chat history and given context to interact and help the user.
                 """
             ),
+            system_prompt = """
+            To retrieve the information below, please refer to the provided index:
+                - school_name
+                - monthly_fees
+                - subjects_offered
+                - ccas_offered
+                - location
+                - what each institute is known for 
+            IF you use pretrained context, output this sentence: please note that ... may be subject to change, and it's always best to check with the school directly for the most up-to-date information.
+            """,
             verbose=True,
         )
 
         return chat_engine
 
     def chat(self, user_text):
+        self.memory.reset()
         user_input = ChatMessage(role=MessageRole.USER, content=user_text)
         self.add_message(self.memory, user_input)
 
@@ -170,20 +151,12 @@ class RAG_Chat:
         self.add_message(self.memory, assistant_message)
         return str(response)
     
-    def get_rec(self, id):
-
+    def get_recommendations(self, id):
         student_data = retrieve_sdata(id)
         considerations = extract_key_considerations(student_data=student_data)
-        prompt = generate_prompt(student_data=student_data, key_considerations_text=considerations) + "GIve only 3 reccs"
-        user_input = ChatMessage(role=MessageRole.USER, content=prompt)
-        self.add_message(self.memory, user_input)
+        prompt = generate_prompt(student_data=student_data, key_considerations_text=considerations) 
 
-        response = self.chat_engine.chat(
-            prompt
-        )
-
-        assistant_message = ChatMessage(role=MessageRole.ASSISTANT, content=str(response))
-        self.add_message(self.memory, assistant_message)
-        return str(response)
+        response = self.chat(prompt)
+        return response
 
 

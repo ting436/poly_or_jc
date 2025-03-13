@@ -131,7 +131,7 @@ rag = RAG_Chat(user_id="student10")
 async def get_recommendations(id):
     try:
         # Use your pipeline
-        response = rag.get_rec(id)
+        response = rag.get_recommendations(id)
         # Convert response to HTML-friendly format
         response_str = str(response)
         return response_str
