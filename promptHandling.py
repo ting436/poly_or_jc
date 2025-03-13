@@ -82,11 +82,6 @@ def extract_key_considerations(student_data):
 
     return key_considerations_text
 
-def json_considerations(student_data):
-    explanations = json.loads(student_data['explanations'])
-    return explanations
-
-
 def generate_prompt(student_data, key_considerations_text):
 
 

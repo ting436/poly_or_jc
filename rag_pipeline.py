@@ -7,19 +7,13 @@ from llama_index.core.llms import MessageRole, ChatMessage
 from llama_index.core.chat_engine import CondensePlusContextChatEngine
 
 from config import initialize_settings
-from llama_index.core import Settings
 
 from ConnectionManagers.MySQLManager import MySQLManager
 from ConnectionManagers.TiDBManager import TiDBManager
-from promptHandling import retrieve_sdata, extract_key_considerations, json_considerations, generate_prompt
+from promptHandling import retrieve_sdata, extract_key_considerations, generate_prompt
 from dotenv import load_dotenv
 
 import logging
-
-from llama_index.core.vector_stores.types import (
-    MetadataFilter,
-    MetadataFilters,
-)
 
 load_dotenv()
 
@@ -121,10 +115,8 @@ class RAG_Chat:
                 You are a chatbot, able to have normal interactions.
                 Your main role is to help the user decide whether they want to go poly or JC.
                 Instruction: Use the previous chat history and given context to interact and help the user.
-                """
-            ),
-            system_prompt = """
-            To retrieve the information below, please refer to the provided index:
+
+            To retrieve the information below, please ONLY refer to the provided index:
                 - school_name
                 - monthly_fees
                 - subjects_offered
@@ -132,14 +124,14 @@ class RAG_Chat:
                 - location
                 - what each institute is known for 
             IF you use pretrained context, output this sentence: please note that ... may be subject to change, and it's always best to check with the school directly for the most up-to-date information.
-            """,
+            """),
             verbose=True,
         )
 
         return chat_engine
 
     def chat(self, user_text):
-        self.memory.reset()
+        #self.memory.reset()
         user_input = ChatMessage(role=MessageRole.USER, content=user_text)
         self.add_message(self.memory, user_input)
 

@@ -1,16 +1,10 @@
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from typing import List, Optional
 from ConnectionManagers.MySQLManager import MySQLManager
 from rag_pipeline import RAG_Chat
 import json
-import os
-from pydantic import BaseModel
 from dotenv import load_dotenv
-# Load environment variables
+
 load_dotenv()
 
 app = FastAPI()
@@ -24,18 +18,15 @@ app.add_middleware(
 )
 
 
-# Serve static files (your HTML, CSS, JS)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+rag = RAG_Chat(user_id="lol")
 
-# Create database and tables if they don't exist
+
 @app.on_event("startup")
 async def startup_db_client():
     sqlmanager = MySQLManager()
     conn = sqlmanager.get_connection()
     cursor = conn.cursor()
     
-    # Create database if it doesn't exist
     cursor.execute("USE choose")
     
     # Create tables
@@ -57,22 +48,6 @@ async def startup_db_client():
     conn.commit()
     cursor.close()
     conn.close()
-
-# Define request models
-class FormData(BaseModel):
-    key_considerations: Optional[List[str]] = None
-    rankings: Optional[dict] = None
-    explanations: Optional[dict] = None
-    interests: Optional[str] = None
-    l1r5: Optional[str] = None
-    strengths: Optional[str] = None
-    learning_style: Optional[str] = None
-    education_focus: Optional[str] = None
-
-@app.get("/", response_class=HTMLResponse)
-async def get_form(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
 
 # API endpoint to handle form data directly from JavaScript
 @app.post("/api/submit")
@@ -124,15 +99,10 @@ async def api_submit_form(form_data: dict):
     return response
 
 
-# Initialize RAG instance
-rag = RAG_Chat(user_id="student10")
-
 @app.post("/api/recommendations/{id}")
 async def get_recommendations(id):
     try:
-        # Use your pipeline
         response = rag.get_recommendations(id)
-        # Convert response to HTML-friendly format
         response_str = str(response)
         return response_str
     except Exception as e:
