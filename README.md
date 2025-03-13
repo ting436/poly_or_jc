@@ -38,7 +38,6 @@ npm install
 
 3. Install backend dependencies:
 ```bash
-cd backend
 pip install -r requirements.txt
 ```
 
@@ -71,14 +70,18 @@ uvicorn main:app --reload
 ├── frontend/
 │   ├── app/
 │   │   ├── dashboard/
-│   │   │   ├── form/
+│   │   │   ├── form
 │   │   │   ├── recommendations/
 │   │   │   └── chat/
 │   │   └── layout.tsx
 │   └── package.json
 │
 └── backend/
+    │   ├── ConnectionManagers
+    │   │   ├── MySQLManager.py
+    │   │   └── TiDBManager.py
     ├── main.py
-    ├── rag_pipeline.py
-    └── requirements.txt
+    ├── config.py
+    ├── promptHandling.py
+    └── rag_pipeline.py
 ```
