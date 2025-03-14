@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 export default function FormPage() {
   const router = useRouter() 
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState(1)
   const [validationError, setValidationError] = useState('')
   const [formData, setFormData] = useState({
@@ -284,7 +285,13 @@ export default function FormPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Prevent double submission
+    if (isSubmitting) return
+
     try {
+      setIsSubmitting(true)
+
       const submissionData = {
         interests: formData.other_answers.interests,
         l1r5: formData.other_answers.l1r5,
@@ -330,6 +337,8 @@ export default function FormPage() {
       router.push('/dashboard/recommendations')
     } catch (error) {
       console.error('Error:', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -358,11 +367,16 @@ export default function FormPage() {
             </button>
           ) : (
             <button
-              type="submit"
-              onClick={handleSubmit}
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 ml-auto"
-            >
-              Submit
+            type="submit"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className={`px-4 py-2 text-white rounded ml-auto ${
+              isSubmitting 
+                ? 'bg-green-300 cursor-not-allowed' 
+                : 'bg-green-500 hover:bg-green-600'
+            }`}
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>
           )}
         </div>
