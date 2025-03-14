@@ -3,6 +3,11 @@ from llama_index.core.schema import Document
 from llama_index.readers.database import DatabaseReader
 import pymysql
 import os
+from pymysql.cursors import DictCursor
+from pymysql.constants import CLIENT
+from contextlib import contextmanager
+import time
+import logging
 
 from dotenv import load_dotenv
 
@@ -22,6 +27,88 @@ class MySQLManager:
         # Build connection string for SQLDatabase
         self.connection_string = f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT', '3306')}/{os.getenv('DB_NAME')}"
         self.db = SQLDatabase.from_uri(self.connection_string)
+                                              
+        # Configure connection pool
+        self.pool = []
+        self.max_pool_size = 5
+        self.connection_timeout = 600  # 10 minutes
+        
+        # Initialize SQLDatabase with longer timeout
+        try:
+            self.db = SQLDatabase.from_uri(
+                self.connection_string,
+                engine_args={"pool_recycle": 3600, "pool_timeout": 60, "pool_size": 5}
+            )
+        except Exception as e:
+            logging.error(f"Failed to initialize SQLDatabase: {str(e)}")
+            self.db = None
+
+    @contextmanager
+    def get_connection(self):
+        """Context manager for database connections with retry logic."""
+        connection = None
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                # Try to get a connection from the pool
+                if self.pool:
+                    connection, created_time = self.pool.pop()
+                    # Check if connection is still valid
+                    if time.time() - created_time > self.connection_timeout:
+                        # Connection is too old, close it and create a new one
+                        connection.close()
+                        connection = None
+                
+                # Create a new connection if needed
+                if connection is None:
+                    connection = pymysql.connect(
+                        host=self.host,
+                        user=self.user,
+                        password=self.password,
+                        database=self.database,
+                        port=self.port,
+                        cursorclass=DictCursor,
+                        client_flag=CLIENT.MULTI_STATEMENTS,
+                        connect_timeout=30,
+                        read_timeout=600,  # 10 minutes
+                        write_timeout=600,  # 10 minutes
+                        autocommit=True
+                    )
+                
+                # Check if connection is working
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT 1")
+                    cursor.fetchone()
+                
+                # Return the working connection
+                yield connection
+                
+                # Return connection to the pool
+                if len(self.pool) < self.max_pool_size:
+                    self.pool.append((connection, time.time()))
+                else:
+                    connection.close()
+                
+                # Successfully got a connection, break the retry loop
+                break
+                
+            except (pymysql.OperationalError, pymysql.InternalError) as e:
+                retry_count += 1
+                if connection:
+                    try:
+                        connection.close()
+                    except:
+                        pass
+                
+                if retry_count >= max_retries:
+                    logging.error(f"Failed to get database connection after {max_retries} attempts: {str(e)}")
+                    raise
+                
+                logging.warning(f"Database connection error, retrying ({retry_count}/{max_retries}): {str(e)}")
+                time.sleep(1)  # Wait before retrying
+        
 
     def get_connection(self):
         return self.connection
