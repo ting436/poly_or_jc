@@ -18,7 +18,7 @@ app.add_middleware(
 )
 
 
-rag = RAG_Chat(user_id="lol")
+rag = RAG_Chat()
 
 
 @app.on_event("startup")
@@ -32,7 +32,7 @@ async def startup_db_client():
     # Create tables
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS student_responses (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id INT,
         considerations JSON,
         rankings JSON,
         explanations JSON,
@@ -72,8 +72,8 @@ async def api_submit_form(form_data: dict):
     
     query = """
     INSERT INTO student_responses 
-    (considerations, rankings, explanations, interests, l1r5_score, strengths, learning_style, education_focus)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    (considerations, rankings, explanations, interests, l1r5_score, strengths, learning_style, education_focus, id)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     
     values = (
@@ -84,25 +84,21 @@ async def api_submit_form(form_data: dict):
         l1r5,
         strengths,
         learning_style,
-        education_focus
+        education_focus,
+        1
     )
     
     cursor.execute(query, values)
     conn.commit()
-
-    new_id = cursor.lastrowid
-    response = {"id": new_id}
     
     cursor.close()
     conn.close()
 
-    return response
 
-
-@app.post("/api/recommendations/{id}")
-async def get_recommendations(id):
+@app.post("/api/recommendations/")
+async def get_recommendations():
     try:
-        response = rag.get_recommendations(id)
+        response = rag.get_recommendations(id=1)
         response_str = str(response)
         return response_str
     except Exception as e:

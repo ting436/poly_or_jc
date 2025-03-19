@@ -1,4 +1,4 @@
-import os
+import os, json
 from typing import Optional
 
 from llama_index.core.memory import ChatMemoryBuffer
@@ -12,7 +12,10 @@ from ConnectionManagers.MySQLManager import MySQLManager
 from ConnectionManagers.TiDBManager import TiDBManager
 from promptHandling import retrieve_sdata, extract_key_considerations, generate_prompt
 from dotenv import load_dotenv
-
+from llama_index.core.vector_stores.types import (
+     MetadataFilter,
+     MetadataFilters,
+ )
 import logging
 
 load_dotenv()
@@ -27,7 +30,7 @@ class RAG_Chat:
             cls._instance = super().__new__(cls)
         return cls._instance
     
-    def __init__(self, user_id: str, groq_api_key: Optional[str] = None):
+    def __init__(self, groq_api_key: Optional[str] = None):
         if not hasattr(self, 'initialized'):
                 
             # Configure logging
@@ -38,7 +41,6 @@ class RAG_Chat:
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
             # Initialize settings
             initialize_settings()
-            self.user_id = user_id
             
             # Load the vector index
             self.index = self._load_index()
@@ -79,7 +81,7 @@ class RAG_Chat:
 
         history = TiDBChatMessageHistory(
             connection_string=tidb_connection_string,
-            session_id=self.user_id,
+            session_id="hello",
         )
 
         return history
@@ -106,32 +108,59 @@ class RAG_Chat:
                 chat_msg = ChatMessage(role=MessageRole.ASSISTANT, content=msg.content)
                 self.memory.put(chat_msg)
 
-    def init_chat_engine(self):
-        chat_engine = CondensePlusContextChatEngine.from_defaults(
-            self.index.as_retriever(),
-            memory=self.memory,
-            context_prompt=(
-                f"""
-                You are a chatbot, able to have normal interactions.
-                Your main role is to help the user decide whether they want to go poly or JC.
-                Instruction: Use the previous chat history and given context to interact and help the user.
 
-            To retrieve the information below, please ONLY refer to the provided index:
-                - school_name
-                - monthly_fees
-                - subjects_offered
-                - ccas_offered
-                - location
-                - what each institute is known for 
-            IF you use pretrained context, output this sentence: please note that ... may be subject to change, and it's always best to check with the school directly for the most up-to-date information.
-            """),
+    def init_chat_engine(self):
+        sdata = retrieve_sdata(id=1)
+        explanations = json.loads(sdata['explanations'])
+        # Create filters list
+        filter_list = []
+        if "location" in explanations:
+            filter_list.append(
+                MetadataFilter(
+                    key="zone_code",
+                    value=explanations['location'].upper()
+                )
+            )
+        
+        if "fees" in explanations:
+            filter_list.append(
+                MetadataFilter(
+                    key="monthly_fees",
+                    value=explanations['fees']
+                )
+            )
+
+        # Create MetadataFilters with proper initialization
+        filters = MetadataFilters(
+            filters=filter_list  # Use named parameter 'filters'
+        )
+        
+        chat_engine = CondensePlusContextChatEngine.from_defaults(
+            retriever = self.index.as_retriever(
+            similarity_top_k=5,    
+            filters=filters
+            ),
+            memory=self.memory,
+            system_prompt=(
+                f"""
+                You are a chatbot specializing in educational guidance, your role is to help users decide which institution to study in (poly or jc).
+                
+                CRITICAL INSTRUCTIONS:
+                1. To retrieve information about schools, you can ONLY use the provided retriever.
+                2. IF you use pretrained context, output this sentence: please note that ... may be subject to change, and it's always best to check with the school directly for the most up-to-date information.
+
+                DO NOT ADD OR MODIFY ANY INFORMATION NOT PRESENT IN THE RETRIEVER.
+                """),
             verbose=True,
         )
+            #         To retrieve the information on monthly school fees, please ONLY refer to the provided documents/index.
+            # IF you use pretrained context, output this sentence: please note that ... may be subject to change, and it's always best to check with the school directly for the most up-to-date information.
+           
 
         return chat_engine
 
     def chat(self, user_text):
-        #self.memory.reset()
+        self.memory.reset()
         user_input = ChatMessage(role=MessageRole.USER, content=user_text)
         self.add_message(self.memory, user_input)
 

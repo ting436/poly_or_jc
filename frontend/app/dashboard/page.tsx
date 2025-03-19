@@ -41,9 +41,9 @@ export default function FormPage() {
   ]
   
   const FEES_OPTIONS = [
-    "Below $500/month",
-    "$500-$1000/month",
-    "Above $1000/month"
+    "Below $100/month",
+    "Below $300/month",
+    "Below $500/month"
   ]
 
   const considerations = {
@@ -316,12 +316,7 @@ export default function FormPage() {
       const submitData = JSON.parse(responseText)
       console.log('Parsed response:', submitData)  // Debug log
   
-      if (!submitData.id) {
-        console.error('Response data:', submitData)  // Debug log
-        throw new Error('No ID returned from form submission')
-      }
-
-      const recsResponse = await fetch(`http://127.0.0.1:8000/api/recommendations/${submitData.id}`, {
+      const recsResponse = await fetch(`http://127.0.0.1:8000/api/recommendations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
