@@ -36,8 +36,7 @@ export default function FormPage() {
     "North",
     "South",
     "East",
-    "West",
-    "Central"
+    "West"
   ]
   
   const FEES_OPTIONS = [
