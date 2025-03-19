@@ -104,7 +104,7 @@ def generate_prompt(student_data, key_considerations_text):
         Name of the Institution
         Reasons why studying in this institution aligns with my preferences
 
-    Present the recommendations in a structured format to facilitate easy comparison and understanding. Feel free to add a concluding sentence comparing the institutions.
+    Present the recommendations in a structured markdown format to facilitate easy comparison and understanding. Feel free to add a concluding sentence comparing the institutions.
     """
     
     return prompt

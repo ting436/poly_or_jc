@@ -130,7 +130,17 @@ class MySQLManager:
             for item in row_data:
                 if ': ' in item:
                     key, value = item.split(': ', 1)
-                    metadata_dict[key] = value
+                    if key == "monthly_fees" and value:
+                        # Remove any non-numeric characters except decimal point
+                        # This will handle cases like "$1200/month" -> "1200"
+                        cleaned_value = ''.join(c for c in value if c.isdigit() or c == '.')
+                        try:
+                            metadata_dict[key] = float(cleaned_value)
+                        except ValueError:
+                            # If conversion fails, store as is
+                            metadata_dict[key] = value
+                    else:
+                        metadata_dict[key] = value
             
             # Create new document with parsed metadata
             new_doc = Document(

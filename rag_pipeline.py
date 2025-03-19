@@ -13,9 +13,11 @@ from ConnectionManagers.TiDBManager import TiDBManager
 from promptHandling import retrieve_sdata, extract_key_considerations, generate_prompt
 from dotenv import load_dotenv
 from llama_index.core.vector_stores.types import (
-     MetadataFilter,
-     MetadataFilters,
- )
+    FilterOperator,
+    MetadataFilter,
+    MetadataFilters,
+)
+
 import logging
 
 load_dotenv()
@@ -126,7 +128,8 @@ class RAG_Chat:
             filter_list.append(
                 MetadataFilter(
                     key="monthly_fees",
-                    value=explanations['fees']
+                    value=explanations['fees'].lstrip("Below $").rstrip("/month"), 
+                    operator=FilterOperator.GTE
                 )
             )
 
