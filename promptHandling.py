@@ -93,7 +93,7 @@ def generate_prompt(student_data, key_considerations_text):
     Interests: {student_data['interests']}
     Strengths/skills: {student_data['strengths']}
     Academic Scores (L1R5): {student_data['l1r5_score']}
-    Learning Preferences: {student_data['learning_style']}
+    Learning Preferences: {student_data['learning_style']} in the context of interested subjects
     Education Focus: {student_data['education_focus']}
 
     In order of importance, these are the key considerations I have in deciding my path.
