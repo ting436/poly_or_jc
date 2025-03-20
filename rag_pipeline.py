@@ -114,7 +114,7 @@ class RAG_Chat:
     def init_chat_engine(self):
         sdata = retrieve_sdata(id=1)
         explanations = json.loads(sdata['explanations'])
-        # Create filters list
+
         filter_list = []
         if "location" in explanations:
             filter_list.append(
@@ -133,9 +133,8 @@ class RAG_Chat:
                 )
             )
 
-        # Create MetadataFilters with proper initialization
         filters = MetadataFilters(
-            filters=filter_list  # Use named parameter 'filters'
+            filters=filter_list 
         )
         
         chat_engine = CondensePlusContextChatEngine.from_defaults(
@@ -155,15 +154,11 @@ class RAG_Chat:
                 DO NOT ADD OR MODIFY ANY INFORMATION NOT PRESENT IN THE RETRIEVER.
                 """),
             verbose=True,
-        )
-            #         To retrieve the information on monthly school fees, please ONLY refer to the provided documents/index.
-            # IF you use pretrained context, output this sentence: please note that ... may be subject to change, and it's always best to check with the school directly for the most up-to-date information.
-           
+        )  
 
         return chat_engine
 
     def chat(self, user_text):
-        self.memory.reset()
         user_input = ChatMessage(role=MessageRole.USER, content=user_text)
         self.add_message(self.memory, user_input)
 
