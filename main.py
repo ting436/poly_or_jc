@@ -95,9 +95,11 @@ async def api_submit_form(form_data: dict):
     conn.close()
 
 
+
 @app.post("/api/recommendations/")
 async def get_recommendations():
     try:
+        rag.clear_all_history()
         response = rag.get_recommendations(id=1)
         response_str = str(response)
         return response_str

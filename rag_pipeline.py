@@ -87,17 +87,6 @@ class RAG_Chat:
         )
 
         return history
-    
-    def add_message(self, memory, message: ChatMessage) -> None:
-        """Add message to both memory buffer and TiDB."""
-        # Add to local memory buffer
-        memory.put(message)
-        
-        # Save to TiDB
-        if message.role == MessageRole.USER:
-            self.history.add_user_message(message.content)
-        elif message.role == MessageRole.ASSISTANT:
-            self.history.add_ai_message(message.content)
 
 
     def _load_from_tidb(self):
@@ -159,15 +148,13 @@ class RAG_Chat:
         return chat_engine
 
     def chat(self, user_text):
-        user_input = ChatMessage(role=MessageRole.USER, content=user_text)
-        self.add_message(self.memory, user_input)
+        self.history.add_user_message(user_text)
 
         response = self.chat_engine.chat(
             user_text
         )
 
-        assistant_message = ChatMessage(role=MessageRole.ASSISTANT, content=str(response))
-        self.add_message(self.memory, assistant_message)
+        self.history.add_ai_message(str(response))
         return str(response)
     
     def get_recommendations(self, id):
@@ -178,4 +165,15 @@ class RAG_Chat:
         response = self.chat(prompt)
         return response
 
+    def clear_all_history(self):
+        """Clear both memory buffer and TiDB chat history"""
+        # Clear memory buffer
+        self.memory.reset()
+        
+        # Clear TiDB chat history
+        try:
+            self.history.clear()
+        
+        except Exception as e:
+            print(f"Error clearing TiDB history: {e}")
 
