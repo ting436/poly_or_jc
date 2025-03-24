@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Your App Name',
+  title: 'Educational Pathway Assistant',
   description: 'Your app description',
 }
 
