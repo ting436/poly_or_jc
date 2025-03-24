@@ -31,19 +31,10 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-rose-50 flex flex-col items-center p-6">
       <Navbar />
-      {/* <header className="w-full flex justify-between items-center py-4 px-8">
-        <h1 className="text-xl font-bold">Educational Pathway Advisor</h1>
-        <nav className="space-x-6">
-          <a href="/" className="text-gray-700 hover:text-black">Home</a>
-          <a href="/dashboard" className="text-gray-700 hover:text-black">Services</a>
-          <a href="#" className="text-gray-700 hover:text-black">Contact Us</a>
-        </nav>
-      </header> */}
 
       <main className="w-full max-w-3xl mt-10 text-center">
         <h2 className="text-3xl py-10 font-semibold">Poly or JC?</h2>
         <div className="relative w-full max-w-full mx-auto">
-          {/* Display Current Image */}
           <Image
             src={images[currentIndex]}
             alt="Slider Image"
@@ -51,20 +42,18 @@ export default function Home() {
             priority
           />
 
-          {/* Left Arrow Button */}
           <button
             onClick={prevImage}
             className="absolute left-2 top-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-80 transition sm:p-2"
           >
-            ⬅
+            ◄
           </button>
 
-          {/* Right Arrow Button */}
           <button
             onClick={nextImage}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-80 transition sm:p-2"
           >
-            ➡
+            ►
           </button>
         </div>
       </main>
