@@ -14,7 +14,7 @@ export default function Home() {
     localStorage.clear()
   }, [])
 
-  const images = [reddit, math]; // Array of images
+  const images = [reddit, math];
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const nextImage = () => {
@@ -62,7 +62,7 @@ export default function Home() {
         <p className="text-gray-700">
           Familiar with these articles? If you've spent countless hours racking your brains, chat with us!
         </p>
-        <button className="mt-4 bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800">
+        <button className="mt-4 bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800" onClick={() => router.push('/form')}>
           Chat
         </button>
       </div>

@@ -131,7 +131,7 @@ export default function FormPage() {
     switch(step) {
       case 1:
         return (
-          <div className="space-y-6">
+          <div className="space-y-6 bg-rose-50">
             <h2 className="text-2xl font-semibold">
               What are the key considerations you have in choosing poly or JC?
             </h2>
