@@ -8,6 +8,7 @@ from pymysql.constants import CLIENT
 from contextlib import contextmanager
 import time
 import logging
+import bcrypt  # For password hashing
 
 from dotenv import load_dotenv
 
@@ -155,3 +156,33 @@ class MySQLManager:
             modified_documents.append(new_doc)
 
         return modified_documents
+
+    def create_user(self, email: str, password: str, name: str = None, school: str = None):
+        """Create a new user with a hashed password."""
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        try:
+            with self.connection.cursor() as cursor:
+                query = """
+                INSERT INTO users (email, hashed_password, name, school)
+                VALUES (%s, %s, %s, %s)
+                """
+                cursor.execute(query, (email, hashed_password.decode('utf-8'), name, school))
+                self.connection.commit()
+        except pymysql.MySQLError as e:
+            logging.error(f"Error creating user: {str(e)}")
+            raise
+
+    def verify_user(self, email: str, password: str) -> bool:
+        """Verify a user's email and password."""
+        try:
+            with self.connection.cursor() as cursor:
+                query = "SELECT hashed_password FROM users WHERE email = %s"
+                cursor.execute(query, (email,))
+                result = cursor.fetchone()
+                if result:
+                    hashed_password = result['hashed_password']
+                    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+                return False
+        except pymysql.MySQLError as e:
+            logging.error(f"Error verifying user: {str(e)}")
+            raise

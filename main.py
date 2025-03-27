@@ -1,13 +1,62 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from ConnectionManagers.MySQLManager import MySQLManager
 from rag_pipeline import RAG_Chat
+from pymysql.err import IntegrityError
 import json
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = FastAPI()
+class UserRegistrationRequest(BaseModel):
+    email: str
+    password: str
+    name: str = None
+    school: str = None
+
+@app.post("/register")
+async def register_user(user: UserRegistrationRequest):
+    """Endpoint to register a new user."""
+    sqlmanager = MySQLManager()
+    conn = sqlmanager.get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("USE choose")
+
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        hashed_password VARCHAR(255) NOT NULL,
+        name VARCHAR(255),
+        school VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    conn.commit()
+    try:
+        # Call create_user to register the user
+        sqlmanager.create_user(
+            email=user.email,
+            password=user.password,
+            name=user.name,
+            school=user.school
+        )
+        return {"message": "User registered successfully!"}
+    except IntegrityError as e:
+        if "Duplicate entry" in str(e):
+            raise HTTPException(
+                status_code=400,
+                detail=f"An account already exists for {user.email}"
+            )
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+    except Exception as e:
+        # Handle errors and return an appropriate response
+        raise HTTPException(status_code=400, detail=f"Failed to register user: {str(e)}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -89,18 +138,6 @@ async def api_submit_form(form_data: dict):
     )
     
     cursor.execute(query, values)
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        hashed_password VARCHAR(255) NOT NULL,
-        name VARCHAR(255),
-        school VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-
     conn.commit()
     
     cursor.close()

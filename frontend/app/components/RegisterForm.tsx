@@ -52,6 +52,36 @@ export default function RegisterForm() {
       setErrors(newErrors);
       return;
     }
+
+    try {
+        const response = await fetch("http://localhost:8000/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+                school: formData.school,
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert(data.message); // Show success message
+        } else {
+            const error = await response.json();
+            if (error.detail.includes("An account already exists")) {
+                setErrors({ ...errors, email: error.detail }); // Set email-specific error
+            } else {
+                alert(`Error: ${error.detail}`); // Show generic error message
+            }
+        }
+    } catch (err) {
+        console.error("Error submitting form:", err);
+        alert("An unexpected error occurred.");
+    }
   };
 
   return (
