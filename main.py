@@ -68,7 +68,7 @@ async def register_user(user: UserRegistrationRequest):
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id VARCHAR(255) NOT NULL UNIQUE,
         email VARCHAR(255) NOT NULL UNIQUE,
         hashed_password VARCHAR(255) NOT NULL,
         name VARCHAR(255),
@@ -105,9 +105,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+def get_rag_instance(request: Request):
+    # Verify the JWT token and retrieve the email
+    payload = verify_jwt_token(request)
+    email = payload.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email not found in session")
 
-
-rag = RAG_Chat()
+    # Instantiate and return RAG_Chat
+    return RAG_Chat(email=email)
 
 
 @app.on_event("startup")
@@ -121,7 +127,6 @@ async def startup_db_client():
     # Create tables
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS student_responses (
-        id INT,
         considerations JSON,
         rankings JSON,
         explanations JSON,
@@ -130,7 +135,8 @@ async def startup_db_client():
         strengths TEXT,
         learning_style TEXT,
         education_focus TEXT,
-        submission_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        submission_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        email VARCHAR(255) NOT NULL
     )
     """)
     
@@ -162,10 +168,11 @@ async def api_submit_form(form_data: dict, request: Request):
     
     query = """
     INSERT INTO student_responses 
-    (considerations, rankings, explanations, interests, l1r5_score, strengths, learning_style, education_focus, id)
+    (considerations, rankings, explanations, interests, l1r5_score, strengths, learning_style, education_focus, email)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    
+    payload = verify_jwt_token(request)
+    email = payload.get("email")
     values = (
         json.dumps(key_considerations),
         json.dumps(rankings),
@@ -175,7 +182,7 @@ async def api_submit_form(form_data: dict, request: Request):
         strengths,
         learning_style,
         education_focus,
-        1
+        email
     )
     
     cursor.execute(query, values)
@@ -189,17 +196,18 @@ async def api_submit_form(form_data: dict, request: Request):
 
 
 @app.post("/api/recommendations/")
-async def get_recommendations():
+async def get_recommendations(request: Request):
     try:
-        rag.clear_all_history()
-        response = rag.get_recommendations(id=1)
+        rag = get_rag_instance(request)
+        response = rag.get_recommendations()
         response_str = str(response)
         return response_str
     except Exception as e:
         return {"error": str(e)}
 
 @app.websocket("/ws/chat")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, request: Request):
+    rag = get_rag_instance(request)
     await websocket.accept()
     try:
         while True:

@@ -52,13 +52,13 @@ def get_consideration_name(key):
     }
     return consideration_names.get(key, key)
 
-def retrieve_sdata(id):
+def retrieve_sdata(email):
     """Generate a prompt based on the student's responses"""
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     
-    query = "SELECT * FROM student_responses WHERE id = %s"
-    cursor.execute(query, (id,))
+    query = "SELECT * FROM student_responses WHERE email = %s"
+    cursor.execute(query, (email,))
     
     student_data = cursor.fetchone()
     cursor.close()

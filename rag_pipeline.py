@@ -32,12 +32,14 @@ class RAG_Chat:
             cls._instance = super().__new__(cls)
         return cls._instance
     
-    def __init__(self, groq_api_key: Optional[str] = None):
+    def __init__(self, groq_api_key: Optional[str] = None, email: str = None):
         if not hasattr(self, 'initialized'):
                 
             # Configure logging
             logging.basicConfig(level=logging.INFO)
             self.logger = logging.getLogger(__name__)
+
+            self.email = email
             
             # Set environment variable for tokenizers
             os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -83,7 +85,7 @@ class RAG_Chat:
 
         history = TiDBChatMessageHistory(
             connection_string=tidb_connection_string,
-            session_id="hello",
+            session_id=self.email,
         )
 
         return history
@@ -157,8 +159,8 @@ class RAG_Chat:
         self.history.add_ai_message(str(response))
         return str(response)
     
-    def get_recommendations(self, id):
-        student_data = retrieve_sdata(id)
+    def get_recommendations(self):
+        student_data = retrieve_sdata(self.email)
         considerations = extract_key_considerations(student_data=student_data)
         prompt = generate_prompt(student_data=student_data, key_considerations_text=considerations) 
 
