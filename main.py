@@ -10,6 +10,28 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
+
+# Pydantic model for sign-in request
+class UserSignInRequest(BaseModel):
+    email: str
+    password: str
+
+@app.post("/signin")
+async def sign_in_user(user: UserSignInRequest):
+    """Endpoint to sign in a user."""
+    sqlmanager = MySQLManager()
+    try:
+        # Call verify_user to check credentials
+        is_valid_user = sqlmanager.verify_user(email=user.email, password=user.password)
+        if is_valid_user:
+            return {"message": "Sign-in successful!"}
+        else:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+    except HTTPException as e:
+        raise e  # Pass HTTP exceptions directly
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
 class UserRegistrationRequest(BaseModel):
     email: str
     password: str
