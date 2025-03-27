@@ -38,35 +38,18 @@ export default function SignInForm() {
       return;
     }
 
-    try {
-      const response = await fetch("http://localhost:8000/signin", {
-          method: "POST",
-          headers: {
-              "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ 
-            email: formData.email,
-            password: formData.password,
-          }),
-      });
+    // Use NextAuth.js's signIn function
+    const result = await signIn("credentials", {
+      redirect: false, // Prevent automatic redirection
+      email: formData.email,
+      password: formData.password,
+    });
 
-      if (response.ok) {
-          const data = await response.json();
-          alert(data.message); // Show success message
-          router.push("/dashboard");
-      } else {
-          const error = await response.json();
-          // Check for specific error messages
-          if (response.status === 401) {
-              setErrors({ ...errors, form: error.detail }); // Display "Invalid email or password"
-          } else {
-              setErrors({ ...errors, form: "An unexpected error occurred. Please try again." });
-          }
-      }
-  } catch (err) {
-      console.error("Error signing in:", err);
-      setErrors({ ...errors, form: "An unexpected error occurred. Please try again." });
-  }
+    if (result?.error) {
+      setErrors({ ...errors, form: result.error }); // Display error message
+    } else {
+      router.push("/dashboard"); // Redirect to dashboard on success
+    }
   };
 
   return (

@@ -1,40 +1,56 @@
-import NextAuth from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 export default NextAuth({
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
       },
-      authorize: async (credentials) => {
-        // Replace this with your own logic to authenticate the user
-        const user = { id: 1, name: 'User', email: credentials?.email }
-        if (user) {
-          return user
-        } else {
-          return null
+      async authorize(credentials) {
+        const res = await fetch("http://localhost:8000/signin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: credentials?.email,
+            password: credentials?.password,
+          }),
+        });
+
+        if (!res.ok) {
+          const error = await res.json(); // Parse the error response
+          throw new Error(error.detail || "Sign-in failed"); // Throw the error message
         }
+
+        const user = await res.json();
+
+        if (user) {
+          return { email: credentials?.email }; // Return user object if successful
+        }
+
+        return null; // Return null if authentication fails
       },
     }),
   ],
-  session: {
-    strategy: 'jwt',
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
+        token.email = user.email; // Add user email to the token
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id
-      }
-      return session
+      session.user = { email: token.email }; // Add user email to the session
+      return session;
     },
   },
-})
+  secret: process.env.SECRET,
+  session: {
+    strategy: "jwt", // Use JWT for session management
+  },
+});

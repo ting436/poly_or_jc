@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, HTTPException
+from fastapi import FastAPI, WebSocket, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from ConnectionManagers.MySQLManager import MySQLManager
@@ -6,10 +6,28 @@ from rag_pipeline import RAG_Chat
 from pymysql.err import IntegrityError
 import json
 from dotenv import load_dotenv
+from jose import jwt
+import os
 
 load_dotenv()
 
 app = FastAPI()
+
+SECRET_KEY = os.getenv('SECRET')  # Same as in NextAuth.js
+ALGORITHM = "HS256"
+
+def verify_jwt_token(request: Request):
+    token = request.headers.get("Authorization")
+    if not token:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+
+    try:
+        # Decode the JWT token
+        payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 
 # Pydantic model for sign-in request
 class UserSignInRequest(BaseModel):
@@ -122,7 +140,8 @@ async def startup_db_client():
 
 # API endpoint to handle form data directly from JavaScript
 @app.post("/api/submit")
-async def api_submit_form(form_data: dict):
+async def api_submit_form(form_data: dict, request: Request):
+    payload = verify_jwt_token(request)
 
     # Extract data from JSON payload
     key_considerations = form_data.get("key_considerations", [])
@@ -164,6 +183,8 @@ async def api_submit_form(form_data: dict):
     
     cursor.close()
     conn.close()
+
+    return {"message": f"Data submitted by {payload['email']}"}
 
 
 

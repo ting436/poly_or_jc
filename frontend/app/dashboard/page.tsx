@@ -1,10 +1,23 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 
 export default function FormPage() {
+  const { data: session, status } = useSession();
   const router = useRouter() 
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/signin"); // Redirect to sign-in if not authenticated
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return <p>Loading...</p>; // Show a loading state while checking the session
+  }
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState(1)
   const [validationError, setValidationError] = useState('')
@@ -301,11 +314,18 @@ export default function FormPage() {
         rankings: formData.rankings,
         explanations: formData.explanations
       }
-      const submitResponse = await fetch('http://127.0.0.1:8000/api/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submissionData)
-      })
+
+      // Get the JWT token from the session
+      const token = session?.accessToken;
+
+      const submitResponse = await fetch("http://127.0.0.1:8000/api/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Include the JWT token in the Authorization header
+        },
+        body: JSON.stringify(submissionData),
+      });
 
       console.log('Response status:', submitResponse.status)  // Debug log
       
@@ -315,10 +335,18 @@ export default function FormPage() {
       const submitData = JSON.parse(responseText)
       console.log('Parsed response:', submitData)  // Debug log
   
-      const recsResponse = await fetch(`http://127.0.0.1:8000/api/recommendations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
+      // Fetch recommendations
+      const recsResponse = await fetch("http://127.0.0.1:8000/api/recommendations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Include the JWT token in the Authorization header
+        },
+      });
+      
+      if (!recsResponse.ok) {
+        throw new Error("Failed to fetch recommendations");
+      }
   
       const recommendations = await recsResponse.json()
 
