@@ -1,23 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from "next-auth/react";
-import { useEffect } from "react";
 
 export default function FormPage() {
   const { data: session, status } = useSession();
   const router = useRouter() 
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/signin"); // Redirect to sign-in if not authenticated
-    }
-  }, [status, router]);
-
-  if (status === "loading") {
-    return <p>Loading...</p>; // Show a loading state while checking the session
-  }
-
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState(1)
   const [validationError, setValidationError] = useState('')
@@ -44,6 +32,17 @@ export default function FormPage() {
       education_focus: ''
     }
   })
+
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/sign-in"); // Redirect to sign-in if not authenticated
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return <p>Loading...</p>; // Show a loading state while checking the session
+  }
 
   const LOCATION_OPTIONS = [
     "North",
@@ -343,7 +342,7 @@ export default function FormPage() {
           Authorization: `Bearer ${token}`, // Include the JWT token in the Authorization header
         },
       });
-      
+
       if (!recsResponse.ok) {
         throw new Error("Failed to fetch recommendations");
       }
