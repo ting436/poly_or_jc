@@ -70,6 +70,19 @@ export default function RegisterForm() {
         if (response.ok) {
             const data = await response.json();
             alert(data.message); // Show success message
+
+            // Automatically sign in the user after successful registration
+            const signInResult = await signIn("credentials", {
+                redirect: false, // Prevent automatic redirection
+                email: formData.email,
+                password: formData.password,
+            });
+            
+            if (signInResult?.error) {
+                alert("Sign-in failed: " + signInResult.error);
+              } else {
+                router.push("/dashboard"); // Redirect to dashboard on successful sign-in
+              }
         } else {
             const error = await response.json();
             if (error.detail.includes("An account already exists")) {
