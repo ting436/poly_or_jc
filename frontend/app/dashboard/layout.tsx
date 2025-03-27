@@ -12,13 +12,13 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen">
-      <div className="w-64 bg-gray-800 text-white p-4 flex flex-col">
-        <h1 className="text-2xl font-bold mb-8">Hi there</h1>
+      <div className="w-64 bg-rose-100 text-gray-800 p-4 flex flex-col">
+        <h1 className="text-2xl font-bold mb-8 text-gray-700">Hi there</h1>
         <nav className="space-y-2 flex-1">
           <Link 
             href="/dashboard"
             className={`block p-2 rounded ${
-              pathname === '/dashboard' ? 'bg-gray-700' : 'hover:bg-gray-700'
+              pathname === '/dashboard' ? 'bg-rose-200 text-rose-800' : 'hover:bg-rose-100'
             }`}
           >
             Form
@@ -26,7 +26,7 @@ export default function DashboardLayout({
           <Link 
             href="/dashboard/recommendations"
             className={`block p-2 rounded ${
-              pathname === '/dashboard/recommendations' ? 'bg-gray-700' : 'hover:bg-gray-700'
+              pathname === '/dashboard/recommendations' ? 'bg-rose-200 text-rose-800' : 'hover:bg-rose-100'
             }`}
           >
             Recommendations
@@ -34,7 +34,7 @@ export default function DashboardLayout({
           <Link 
             href="/dashboard/chatbot"
             className={`block p-2 rounded ${
-              pathname === '/dashboard/chatbot' ? 'bg-gray-700' : 'hover:bg-gray-700'
+              pathname === '/dashboard/chatbot' ? 'bg-rose-200 text-rose-800' : 'hover:bg-rose-100'
             }`}
           >
             Chatbot

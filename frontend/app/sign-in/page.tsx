@@ -1,6 +1,6 @@
 'use client'
 import Navbar from '../components/Navbar'
-import SignInForm from '../components/Form'
+import SignInForm from '../components/SignInForm'
 
 export default function Form() {
 

@@ -6,9 +6,11 @@ import Image from "next/image";
 import reddit from "./images/reddit.png"
 import math from "./images/math.png"
 import Navbar from './components/Navbar'
+import { useSession } from 'next-auth/react'
 
 export default function Home() {
   const router = useRouter()
+  const { data: session } = useSession()
 
   useEffect(() => {
     localStorage.clear()
@@ -62,7 +64,16 @@ export default function Home() {
         <p className="text-gray-700">
           Familiar with these articles? If you've spent countless hours racking your brains, chat with us!
         </p>
-        <button className="mt-4 bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800" onClick={() => router.push('/form')}>
+        <button
+          className="mt-4 bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800"
+          onClick={() => {
+            if (session) {
+              router.push('/dashboard') 
+            } else {
+              router.push('/sign-in') 
+            }
+          }}
+        >
           Chat
         </button>
       </div>
