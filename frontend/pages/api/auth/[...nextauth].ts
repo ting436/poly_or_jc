@@ -43,6 +43,16 @@ export default NextAuth({
       },
     }),
   ],
+  secret: process.env.SECRET,
+  session: {
+    strategy: "jwt",    
+    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+    updateAge: 24 * 60 * 60, 
+  },
+  jwt: {
+    // Extend JWT expiration (e.g., 7 days)
+    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+  },
   callbacks: {
     async jwt({ token, user }) {
       // Only add user properties on initial sign in
@@ -63,9 +73,5 @@ export default NextAuth({
       };
       return session;
     },
-  },
-  secret: process.env.SECRET,
-  session: {
-    strategy: "jwt",
   },
 });
