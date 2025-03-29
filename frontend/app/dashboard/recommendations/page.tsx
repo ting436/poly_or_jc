@@ -1,14 +1,23 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from "next-auth/react";
 
 export default function RecommendationsPage() {
+  const { data: session, status } = useSession();
   const router = useRouter()
   const [recommendations, setRecommendations] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/sign-in"); // Redirect to sign-in if not authenticated
+    }
+  }, [status, router]);
   
   useEffect(() => {
-    const recommendations = localStorage.getItem('recommendations')
+    const email = session?.user.email
+    const recommendations = localStorage.getItem(`recommendations${email}`)
     if (!recommendations) {
       // No recent form submission
       router.push('/dashboard/')
@@ -16,7 +25,8 @@ export default function RecommendationsPage() {
   }, [router])
 
   useEffect(() => {
-    const storedRecs = localStorage.getItem('recommendations')
+    const email = session?.user.email
+    const storedRecs = localStorage.getItem(`recommendations${email}`)
     if (storedRecs) {
       setRecommendations(JSON.parse(storedRecs))
       setLoading(false)

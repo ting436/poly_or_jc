@@ -54,6 +54,8 @@ class RAG_Chat:
 
             #Initialise chat engine and store memory
             self.memory = ChatMemoryBuffer.from_defaults(token_limit=3900)
+
+            self._load_from_tidb()  # Load user-specific chat history into the memory buffer
             self.chat_engine = self.init_chat_engine()
 
             self.initialized = True

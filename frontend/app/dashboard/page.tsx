@@ -315,6 +315,7 @@ export default function FormPage() {
       }
 
       const token = session?.user.accessToken;
+      const email = session?.user.email;
 
       const submitResponse = await fetch("http://127.0.0.1:8000/api/submit", {
         method: "POST",
@@ -347,11 +348,9 @@ export default function FormPage() {
       }
   
       const recommendations = await recsResponse.json()
-
-      localStorage.removeItem('chatMessages')
       
       // Store recommendations in localStorage
-      localStorage.setItem('recommendations', JSON.stringify(recommendations))
+      localStorage.setItem(`recommendations${email}`, JSON.stringify(recommendations))
       
       // Redirect to recommendations page
       router.push('/dashboard/recommendations')

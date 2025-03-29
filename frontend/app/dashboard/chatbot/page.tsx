@@ -23,30 +23,42 @@ export default function ChatPage() {
   // Set isClient to true once the component mounts
   useEffect(() => {
     setIsClient(true)
-    
+       
+    if (status === "unauthenticated") {
+      console.log("Session is unauthenticated...");
+      router.push('/sign-in')
+      return
+    }
+
+    if (status !== "authenticated" || !session?.user?.accessToken) {
+      console.log("Waiting for session to be authenticated...");
+      return;
+    }
     // Check if there are recommendations from a recent form submission
-    const recommendations = localStorage.getItem('recommendations')
+    const email = session?.user.email
+    const recommendations = localStorage.getItem(`recommendations${email}`)
     if (!recommendations) {
       // No recent form submission
       router.push('/dashboard/')
     }
     
     // Load messages from localStorage
-    const savedMessages = localStorage.getItem('chatMessages')
+    const savedMessages = localStorage.getItem(`chatMessages${email}`)
     if (savedMessages) {
       try {
         setMessages(JSON.parse(savedMessages))
       } catch (e) {
         console.error('Failed to parse saved messages:', e)
-        localStorage.removeItem('chatMessages')
+        localStorage.removeItem(`chatMessages${email}`)
       }
     }
-  }, [router])
+  }, [session, status, router])
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
+    const email = session?.user.email
     if (isClient && messages.length > 0) {
-      localStorage.setItem('chatMessages', JSON.stringify(messages))
+      localStorage.setItem(`chatMessages${email}`, JSON.stringify(messages))
     }
   }, [messages, isClient])
 
@@ -59,20 +71,8 @@ export default function ChatPage() {
   useEffect(() => {
     if (!isClient) return
 
-    // Only attempt to connect when session is authenticated
-    if (status !== "authenticated" || !session?.user?.accessToken) {
-      console.log("Waiting for session to be authenticated...");
-      return;
-    }
-    
     console.log("Session authenticated, connecting to WebSocket...");
-    const token = session.user.accessToken;
-    
-    if (status === "unauthenticated") {
-      console.log("Session is unauthenticated...");
-      router.push('/sign-in')
-      return
-    }
+    const token = session?.user.accessToken;
 
     const connectWebSocket = () => {
       if (wsRef.current?.readyState === WebSocket.OPEN) return
@@ -84,9 +84,7 @@ export default function ChatPage() {
 
       try {
         // Create WebSocket with custom headers
-        console.log("Session:", session);
         const token = session?.user.accessToken;
-        console.log("Token:", token);
         wsRef.current = new WebSocket(`ws://localhost:8000/ws/chat`)
 
 
@@ -180,8 +178,8 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] p-4 max-w-4xl mx-auto">
-      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+    <div className="flex flex-col h-[calc(100vh-4rem)] p-4 max-w-4xl mx-auto relative">
+      <div className="flex-1 overflow-y-auto mb-4 space-y-4 pb-5 pr-5">
         {messages.map((message, index) => (
           <div
             key={index}
@@ -190,8 +188,8 @@ export default function ChatPage() {
             <div
               className={`max-w-[80%] rounded-lg p-4 ${
                 message.type === 'user'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-800'
+                  ? 'bg-rose-500 text-white'
+                  : 'bg-rose-100 text-gray-800'
               }`}
             >
               <p className="whitespace-pre-wrap">{message.content}</p>
@@ -201,19 +199,19 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <form onSubmit={handleSubmit} className="flex gap-2 p-4 fixed bottom-0 bg-rose-50 w-full max-w-4xl mx-auto relative">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
-          className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
           disabled={!isConnected}
         />
         <button
           type="submit"
           disabled={!isConnected || !input.trim()}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           Send
         </button>

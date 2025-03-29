@@ -12,10 +12,6 @@ export default function Home() {
   const router = useRouter()
   const { data: session } = useSession()
 
-  useEffect(() => {
-    localStorage.clear()
-  }, [])
-
   const images = [reddit, math];
   const [currentIndex, setCurrentIndex] = useState(0);
 

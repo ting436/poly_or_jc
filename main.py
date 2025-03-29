@@ -130,6 +130,7 @@ def get_rag_instance(request: Optional[Request] = None, token: Optional[str] = N
     if not email:
         raise HTTPException(status_code=400, detail="Email not found in session")
 
+    logging.info(f"Creating RAG instance for email: {email}")
     # Instantiate and return RAG_Chat
     return RAG_Chat(email=email)
 
@@ -182,14 +183,16 @@ async def api_submit_form(form_data: dict, request: Request):
     conn = sqlmanager.get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("DELETE FROM student_responses")
+
+    email = payload.get("email")
+
+    cursor.execute("DELETE FROM student_responses WHERE email = %s", (email))
     
     query = """
     INSERT INTO student_responses 
     (considerations, rankings, explanations, interests, l1r5_score, strengths, learning_style, education_focus, email)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    email = payload.get("email")
     values = (
         json.dumps(key_considerations),
         json.dumps(rankings),
