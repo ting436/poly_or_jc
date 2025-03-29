@@ -13,6 +13,9 @@ export default NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password are required");
+        }
         const res = await fetch("http://localhost:8000/signin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -23,34 +26,46 @@ export default NextAuth({
         });
 
         if (!res.ok) {
-          const error = await res.json(); // Parse the error response
-          throw new Error(error.detail || "Sign-in failed"); // Throw the error message
+          const error = await res.json();
+          throw new Error(error.detail || "Sign-in failed");
         }
 
         const user = await res.json();
 
         if (user) {
-          return { email: credentials?.email }; // Return user object if successful
+          return { 
+            email: credentials.email, 
+            accessToken: user.accessToken, 
+          };
         }
 
-        return null; // Return null if authentication fails
+        return null;
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
+      // Only add user properties on initial sign in
       if (user) {
-        token.email = user.email; // Add user email to the token
+        return { 
+          ...token, 
+          email: user.email,
+          accessToken: user.accessToken 
+        };
       }
       return token;
     },
     async session({ session, token }) {
-      session.user = { email: token.email }; // Add user email to the session
+      // Attach specific properties to session.user
+      session.user = {
+        email: token.email,
+        accessToken: token.accessToken
+      };
       return session;
     },
   },
   secret: process.env.SECRET,
   session: {
-    strategy: "jwt", // Use JWT for session management
+    strategy: "jwt",
   },
 });

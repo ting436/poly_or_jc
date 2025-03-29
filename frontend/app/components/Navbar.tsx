@@ -12,7 +12,7 @@ const Navbar = () => {
       return
     }
 
-    if (session) {
+    if (session?.user) {
       router.push('/dashboard')
     } else {
       router.push('/sign-in')
@@ -20,7 +20,7 @@ const Navbar = () => {
   }
 
   const handleSignInOut = () => {
-    if (session) {
+    if (session?.user) {
       signOut({ callbackUrl: '/' }) // Log out the user
     } else {
       router.push('/sign-in') // Redirect to sign-in page

@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from "next-auth/react";
+
 
 interface Message {
   type: 'user' | 'bot'
@@ -16,6 +18,7 @@ export default function ChatPage() {
   const wsRef = useRef<WebSocket | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const { data: session, status } = useSession();
 
   // Set isClient to true once the component mounts
   useEffect(() => {
@@ -56,6 +59,21 @@ export default function ChatPage() {
   useEffect(() => {
     if (!isClient) return
 
+    // Only attempt to connect when session is authenticated
+    if (status !== "authenticated" || !session?.user?.accessToken) {
+      console.log("Waiting for session to be authenticated...");
+      return;
+    }
+    
+    console.log("Session authenticated, connecting to WebSocket...");
+    const token = session.user.accessToken;
+    
+    if (status === "unauthenticated") {
+      console.log("Session is unauthenticated...");
+      router.push('/sign-in')
+      return
+    }
+
     const connectWebSocket = () => {
       if (wsRef.current?.readyState === WebSocket.OPEN) return
 
@@ -65,10 +83,21 @@ export default function ChatPage() {
       }
 
       try {
-        wsRef.current = new WebSocket('ws://localhost:8000/ws/chat')
+        // Create WebSocket with custom headers
+        console.log("Session:", session);
+        const token = session?.user.accessToken;
+        console.log("Token:", token);
+        wsRef.current = new WebSocket(`ws://localhost:8000/ws/chat`)
+
 
         wsRef.current.onopen = () => {
           setIsConnected(true)
+          if (wsRef.current && session?.user.accessToken) {
+            wsRef.current.send(session?.user.accessToken || '');
+          }
+          else {
+            return
+          }
           console.log('WebSocket connected')
           
           // Clear any reconnection timeout
@@ -121,7 +150,7 @@ export default function ChatPage() {
         clearTimeout(reconnectTimeoutRef.current)
       }
     }
-  }, [isClient])
+  }, [isClient, session, status, router])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

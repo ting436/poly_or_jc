@@ -8,6 +8,9 @@ import json
 from dotenv import load_dotenv
 from jose import jwt
 import os
+from datetime import datetime, timedelta
+from typing import Optional
+import logging
 
 load_dotenv()
 
@@ -16,14 +19,16 @@ app = FastAPI()
 SECRET_KEY = os.getenv('SECRET')  # Same as in NextAuth.js
 ALGORITHM = "HS256"
 
-def verify_jwt_token(request: Request):
-    token = request.headers.get("Authorization")
+def verify_jwt_token(request: Optional[Request] = None, token: Optional[str] = None):
+    if request:
+        token = request.headers.get("Authorization")
+    else:
+        token = token
     if not token:
         raise HTTPException(status_code=401, detail="Authorization header missing")
-
     try:
         # Decode the JWT token
-        payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=[ALGORITHM]) 
         return payload
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -42,7 +47,17 @@ async def sign_in_user(user: UserSignInRequest):
         # Call verify_user to check credentials
         is_valid_user = sqlmanager.verify_user(email=user.email, password=user.password)
         if is_valid_user:
-            return {"message": "Sign-in successful!"}
+            # Generate JWT token
+            token_payload = {
+                "email": user.email,
+                "exp": datetime.utcnow() + timedelta(days=1)  # Token expires in 1 day
+            }
+            access_token = jwt.encode(token_payload, SECRET_KEY, algorithm=ALGORITHM)
+            
+            return {
+                "message": "Sign-in successful!",
+                "accessToken": access_token
+            }
         else:
             raise HTTPException(status_code=401, detail="Invalid email or password")
     except HTTPException as e:
@@ -105,9 +120,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-def get_rag_instance(request: Request):
+def get_rag_instance(request: Optional[Request] = None, token: Optional[str] = None):
     # Verify the JWT token and retrieve the email
-    payload = verify_jwt_token(request)
+    if request:
+        payload = verify_jwt_token(request=request)
+    else:
+        payload = verify_jwt_token(token=token)
     email = payload.get("email")
     if not email:
         raise HTTPException(status_code=400, detail="Email not found in session")
@@ -147,7 +165,7 @@ async def startup_db_client():
 # API endpoint to handle form data directly from JavaScript
 @app.post("/api/submit")
 async def api_submit_form(form_data: dict, request: Request):
-    payload = verify_jwt_token(request)
+    payload = verify_jwt_token(request=request)
 
     # Extract data from JSON payload
     key_considerations = form_data.get("key_considerations", [])
@@ -171,7 +189,6 @@ async def api_submit_form(form_data: dict, request: Request):
     (considerations, rankings, explanations, interests, l1r5_score, strengths, learning_style, education_focus, email)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    payload = verify_jwt_token(request)
     email = payload.get("email")
     values = (
         json.dumps(key_considerations),
@@ -198,17 +215,24 @@ async def api_submit_form(form_data: dict, request: Request):
 @app.post("/api/recommendations/")
 async def get_recommendations(request: Request):
     try:
-        rag = get_rag_instance(request)
+        rag = get_rag_instance(request=request)
         response = rag.get_recommendations()
         response_str = str(response)
         return response_str
     except Exception as e:
-        return {"error": str(e)}
+        print(str(e))
 
 @app.websocket("/ws/chat")
-async def websocket_endpoint(websocket: WebSocket, request: Request):
-    rag = get_rag_instance(request)
+async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    initial_token = await websocket.receive_text()
+    token = initial_token.strip() 
+    try:
+        rag = get_rag_instance(token=f"Bearer {token}")
+    except Exception as e:
+        logging.error(f"Token validation error: {e}")
+        await websocket.close(code=1008, reason="Authentication failed")
+        return
     try:
         while True:
             message = await websocket.receive_text()

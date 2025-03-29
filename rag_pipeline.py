@@ -103,7 +103,7 @@ class RAG_Chat:
 
 
     def init_chat_engine(self):
-        sdata = retrieve_sdata(id=1)
+        sdata = retrieve_sdata(self.email)
         explanations = json.loads(sdata['explanations'])
 
         filter_list = []

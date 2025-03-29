@@ -314,8 +314,7 @@ export default function FormPage() {
         explanations: formData.explanations
       }
 
-      // Get the JWT token from the session
-      const token = session?.accessToken;
+      const token = session?.user.accessToken;
 
       const submitResponse = await fetch("http://127.0.0.1:8000/api/submit", {
         method: "POST",
