@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 
 export default function FormPage() {
   const { data: session, status } = useSession();
-  const router = useRouter() 
+  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState(1)
   const [validationError, setValidationError] = useState('')
@@ -33,12 +33,30 @@ export default function FormPage() {
     }
   })
 
+  // State to handle drag and drop
+  const [rankingItems, setRankingItems] = useState([]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/sign-in"); // Redirect to sign-in if not authenticated
     }
   }, [status, router]);
+
+  // Effect to update rankingItems when we move to step 2
+  useEffect(() => {
+    if (step === 2) {
+      // Convert selected considerations to draggable items
+      const selectedItems = Object.entries(formData.key_considerations)
+        .filter(([_, checked]) => checked)
+        .map(([key], index) => ({
+          id: key,
+          content: considerations[key],
+          rank: index + 1
+        }));
+      
+      setRankingItems(selectedItems);
+    }
+  }, [step, formData.key_considerations]);
 
   if (status === "loading") {
     return <p>Loading...</p>; // Show a loading state while checking the session
@@ -67,44 +85,69 @@ export default function FormPage() {
     extracurricular: "CCA/Interest Groups"
   }
 
+  // HTML5 Drag and Drop handlers
+  const handleDragStart = (e, index) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.currentTarget.classList.add('bg-rose-100');
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.currentTarget.classList.add('bg-gray-100');
+  };
+
+  const handleDragLeave = (e) => {
+    e.currentTarget.classList.remove('bg-gray-100');
+  };
+
+  const handleDrop = (e, targetIndex) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('bg-gray-100');
+    
+    const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    
+    if (sourceIndex === targetIndex) return;
+    
+    const items = Array.from(rankingItems);
+    const [movedItem] = items.splice(sourceIndex, 1);
+    items.splice(targetIndex, 0, movedItem);
+    
+    // Update ranks based on new order
+    const rankedItems = items.map((item, index) => ({
+      ...item,
+      rank: index + 1
+    }));
+    
+    setRankingItems(rankedItems);
+    
+    // Update rankings in formData
+    const newRankings = {};
+    rankedItems.forEach(item => {
+      newRankings[item.id] = item.rank.toString();
+    });
+    
+    setFormData(prev => ({
+      ...prev,
+      rankings: newRankings
+    }));
+  };
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.classList.remove('bg-rose-100');
+  };
+
   const validateRankings = () => {
-    const selectedConsiderations = Object.keys(formData.rankings)
-    
-    // Check if all considerations have been ranked
-    const missingRankings = selectedConsiderations.filter(key => 
-      !formData.rankings[key] || formData.rankings[key] === ''
-    )
-    
-    if (missingRankings.length > 0) {
-      setValidationError('Please rank all of your selected considerations')
-      return false
+    // With drag and drop, rankings should always be valid as the UI enforces ordering
+    if (rankingItems.length === 0) {
+      setValidationError('Please rank your considerations');
+      return false;
     }
     
-    // Convert ranking values to numbers
-    const rankingValues = selectedConsiderations.map(key => Number(formData.rankings[key]))
-    
-    // Check for duplicate rankings
-    const uniqueRankings = new Set(rankingValues)
-    if (uniqueRankings.size !== selectedConsiderations.length) {
-      setValidationError('Please assign a unique rank to each consideration')
-      return false
-    }
-    
-    // Check if rankings are within valid range (1 to total number of considerations)
-    const maxRank = selectedConsiderations.length
-    const hasInvalidRank = rankingValues.some(rank => rank < 1 || rank > maxRank || !Number.isInteger(rank))
-    
-    if (hasInvalidRank) {
-      setValidationError(`Please rank from 1 to ${maxRank} without skipping numbers`)
-      return false
-    }
-    
-    // All validations passed
-    setValidationError('')
-    return true
+    setValidationError('');
+    return true;
   }
 
-  const handleNext = (e: React.FormEvent) => {
+  const handleNext = (e) => {
     e.preventDefault()
     if (step === 1) {
       // Check if at least one consideration is selected
@@ -118,32 +161,32 @@ export default function FormPage() {
       // Initialize rankings for selected considerations
       const selectedConsiderations = Object.entries(formData.key_considerations)
         .filter(([_, checked]) => checked)
-        .reduce((acc, [key]) => ({
+        .reduce((acc, [key], index) => ({
           ...acc,
-          [key]: ''
-        }), {})
+          [key]: (index + 1).toString()
+        }), {});
       
       setFormData(prev => ({
         ...prev,
         rankings: selectedConsiderations
-      }))
+      }));
       
-      setValidationError('')
+      setValidationError('');
     } else if (step === 2) {
       // Validate rankings before proceeding
       if (!validateRankings()) {
-        return
+        return;
       }
     }
     
-    setStep(step + 1)
+    setStep(step + 1);
   }
   
   const renderStep = () => {
     switch(step) {
       case 1:
         return (
-          <div className="space-y-6 bg-rose-50">
+          <div className="space-y-6 bg-rose-50 p-6 rounded-lg">
             <h2 className="text-2xl font-semibold">
               What are the key considerations you have in choosing poly or JC?
             </h2>
@@ -174,29 +217,36 @@ export default function FormPage() {
           <div className="space-y-6">
             <h2 className="text-2xl font-semibold">Rank Your Considerations</h2>
             <p className="text-sm text-gray-600">
-              Rank from 1 (most important) to {Object.keys(formData.rankings).length} (least important)
+              Drag and drop to rank from most important (top) to least important (bottom)
             </p>
+            
             <div className="space-y-4">
-              {Object.keys(formData.rankings).map((key) => (
-                <div key={key} className="flex items-center space-x-4">
-                  <input
-                    type="number"
-                    min="1"
-                    max={Object.keys(formData.rankings).length}
-                    value={formData.rankings[key]}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      rankings: {
-                        ...formData.rankings,
-                        [key]: e.target.value
-                      }
-                    })}
-                    className="w-20 p-2 border rounded"
-                  />
-                  <span>{considerations[key]}</span>
+              {rankingItems.map((item, index) => (
+                <div
+                  key={item.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className="p-4 rounded-lg shadow-md flex items-center bg-white cursor-move transition-colors duration-200 hover:bg-rose-100"
+                >
+                  <div className="flex-1 flex items-center">
+                    <div className="h-8 w-8 rounded-full bg-rose-500 flex items-center justify-center text-white font-bold mr-4">
+                      {item.rank}
+                    </div>
+                    <span className="font-medium">{item.content}</span>
+                  </div>
+                  <div className="text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                    </svg>
+                  </div>
                 </div>
               ))}
             </div>
+            
             {validationError && (
               <p className="text-red-500 mt-2">{validationError}</p>
             )}
@@ -209,56 +259,56 @@ export default function FormPage() {
             <div className="space-y-6">
               <h2 className="text-2xl font-semibold">Explain Your Rankings</h2>
               {Object.keys(formData.rankings).map((key) => (
-                <div key={key} className="space-y-2">
+                <div key={key} className="space-y-2 p-4 rounded-lg">
                   <label className="block font-medium">
                     Why did you rank {considerations[key]} as {formData.rankings[key]}?
                   </label>
                   {key === 'fees' ? (
-              <select
-                value={formData.explanations[key] || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  explanations: {
-                    ...formData.explanations,
-                    [key]: e.target.value
-                  }
-                })}
-                className="w-full p-2 border rounded"
-              >
-                <option value="">Select fee range</option>
-                {FEES_OPTIONS.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            ) : key === 'location' ? (
-              <select
-                value={formData.explanations[key] || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  explanations: {
-                    ...formData.explanations,
-                    [key]: e.target.value
-                  }
-                })}
-                className="w-full p-2 border rounded"
-              >
-                <option value="">Select location preference</option>
-                {LOCATION_OPTIONS.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            ) : (
-                  <textarea
-                    value={formData.explanations[key] || ''}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      explanations: {
-                        ...formData.explanations,
-                        [key]: e.target.value
-                      }
-                    })}
-                    className="w-full p-2 border rounded h-24"
-                  />
+                    <select
+                      value={formData.explanations[key] || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        explanations: {
+                          ...formData.explanations,
+                          [key]: e.target.value
+                        }
+                      })}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="">Select fee range</option>
+                      {FEES_OPTIONS.map(option => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  ) : key === 'location' ? (
+                    <select
+                      value={formData.explanations[key] || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        explanations: {
+                          ...formData.explanations,
+                          [key]: e.target.value
+                        }
+                      })}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="">Select location preference</option>
+                      {LOCATION_OPTIONS.map(option => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <textarea
+                      value={formData.explanations[key] || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        explanations: {
+                          ...formData.explanations,
+                          [key]: e.target.value
+                        }
+                      })}
+                      className="w-full p-2 border rounded h-24"
+                    />
                   )}
                 </div>
               ))}
@@ -273,7 +323,7 @@ export default function FormPage() {
                 ['learning_style', 'Do you prefer academic, theory-based learning or hands-on, practical experience?'],
                 ['education_focus', 'Are you focused on entering a specific industry or do you want a more general university education?']
               ].map(([key, question]) => (
-                <div key={key} className="space-y-2">
+                <div key={key} className="space-y-2 p-4 rounded-lg">
                   <label className="block font-medium">{question}</label>
                   <textarea
                     value={formData.other_answers[key]}
@@ -294,7 +344,7 @@ export default function FormPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     // Prevent double submission
@@ -302,6 +352,8 @@ export default function FormPage() {
 
     try {
       setIsSubmitting(true)
+
+      localStorage.clear()
 
       const submissionData = {
         interests: formData.other_answers.interests,
@@ -333,6 +385,7 @@ export default function FormPage() {
       
       const submitData = JSON.parse(responseText)
       console.log('Parsed response:', submitData)  // Debug log
+
   
       // Fetch recommendations
       const recsResponse = await fetch("http://127.0.0.1:8000/api/recommendations", {
@@ -380,22 +433,22 @@ export default function FormPage() {
             <button
               type="button"
               onClick={handleNext}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ml-auto"
+              className="px-4 py-2 bg-rose-500 text-white rounded hover:bg-rose-600 ml-auto"
             >
               Next
             </button>
           ) : (
             <button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className={`px-4 py-2 text-white rounded ml-auto ${
-              isSubmitting 
-                ? 'bg-green-300 cursor-not-allowed' 
-                : 'bg-green-500 hover:bg-green-600'
-            }`}
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit'}
+              type="submit"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className={`px-4 py-2 text-white rounded ml-auto ${
+                isSubmitting 
+                  ? 'bg-green-300 cursor-not-allowed' 
+                  : 'bg-green-500 hover:bg-green-600'
+              }`}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>
           )}
         </div>

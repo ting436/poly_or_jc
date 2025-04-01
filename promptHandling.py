@@ -61,12 +61,18 @@ def retrieve_sdata(email):
     cursor.execute(query, (email,))
     
     student_data = cursor.fetchone()
+
+    query = "SELECT school FROM users WHERE email = %s"
+    cursor.execute(query, (email,))
+    school = cursor.fetchone()
+
     cursor.close()
     conn.close()
     
     if not student_data:
         return "No student data found."
     
+    student_data["school"] = school
 
     return student_data
 
@@ -84,11 +90,8 @@ def extract_key_considerations(student_data):
 
 def generate_prompt(student_data, key_considerations_text):
 
-
-    # Determine school (placeholder, you might want to collect this in your form)
-    school = "Singapore Secondary School"  # Default value
     # Create prompt
-    prompt = f"""I am a student from {school} seeking guidance on my future educational and career paths. Here is my profile:
+    prompt = f"""I am a student from {student_data['school']} seeking guidance on my future educational and career paths. Here is my profile:
 
     Interests: {student_data['interests']}
     Strengths/skills: {student_data['strengths']}
@@ -104,7 +107,31 @@ def generate_prompt(student_data, key_considerations_text):
         Name of the Institution
         Reasons why studying in this institution aligns with my preferences
 
-    Present the recommendations in a structured markdown format to facilitate easy comparison and understanding. Feel free to add a concluding sentence comparing the institutions.
+    Present the recommendations in a structured format to facilitate easy comparison and understanding. Feel free to add a concluding sentence comparing the institutions.
+
+    Example format:
+
+    ** Recommondation 1: School Name **
+    Reasons:
+        + Reason 1
+        + Reason 2
+        + Reason 3
+
+    ** Recommondation 1: School Name **
+    Reasons:
+        + Reason 1
+        + Reason 2
+        + Reason 3
+    
+    ** Recommondation 1: School Name **
+    Reasons:
+        + Reason 1
+        + Reason 2
+        + Reason 3
+        
+    Concluding Sentence:
     """
     
     return prompt
+
+
