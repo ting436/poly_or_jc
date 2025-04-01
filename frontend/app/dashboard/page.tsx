@@ -353,8 +353,6 @@ export default function FormPage() {
     try {
       setIsSubmitting(true)
 
-      localStorage.clear()
-
       const submissionData = {
         interests: formData.other_answers.interests,
         l1r5: formData.other_answers.l1r5,
@@ -368,6 +366,10 @@ export default function FormPage() {
 
       const token = session?.user.accessToken;
       const email = session?.user.email;
+
+      localStorage.removeItem(`recommendations${email}`)
+
+      localStorage.removeItem(`chatMessages${email}`)
 
       const submitResponse = await fetch("http://127.0.0.1:8000/api/submit", {
         method: "POST",

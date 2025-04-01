@@ -168,6 +168,9 @@ async def startup_db_client():
 async def api_submit_form(form_data: dict, request: Request):
     payload = verify_jwt_token(request=request)
 
+    rag = get_rag_instance(request=request)
+    rag.clear_all_history()
+
     # Extract data from JSON payload
     key_considerations = form_data.get("key_considerations", [])
     rankings = form_data.get("rankings", {})

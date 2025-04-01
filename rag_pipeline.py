@@ -25,12 +25,12 @@ load_dotenv()
 class RAG_Chat:
     """Retrieval-Augmented Generation class for educational recommendations."""
 
-    _instance = None
+    # _instance = None
     
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    # def __new__(cls, *args, **kwargs):
+    #     if cls._instance is None:
+    #         cls._instance = super().__new__(cls)
+    #     return cls._instance
     
     def __init__(self, groq_api_key: Optional[str] = None, email: str = None):
         if not hasattr(self, 'initialized'):
@@ -53,9 +53,9 @@ class RAG_Chat:
             self.history = self._connect_tidb()
 
             #Initialise chat engine and store memory
-            self.memory = ChatMemoryBuffer.from_defaults(token_limit=3900)
+            chat_history = self._load_from_tidb()
+            self.memory = ChatMemoryBuffer.from_defaults(chat_history=chat_history, chat_store_key=self.email, token_limit=3900)
 
-            self._load_from_tidb()  # Load user-specific chat history into the memory buffer
             self.chat_engine = self.init_chat_engine()
 
             self.initialized = True
@@ -95,13 +95,16 @@ class RAG_Chat:
 
     def _load_from_tidb(self):
         """Load messages from TiDB into memory buffer."""
+        chat_history = []
         for msg in self.history.messages:
             if msg.type == "human":
                 chat_msg = ChatMessage(role=MessageRole.USER, content=msg.content)
-                self.memory.put(chat_msg)
+                chat_history.append(chat_msg)
             elif msg.type == "ai":
                 chat_msg = ChatMessage(role=MessageRole.ASSISTANT, content=msg.content)
-                self.memory.put(chat_msg)
+                chat_history.append(chat_msg)
+        print(f"hist:{chat_history}")
+        return chat_history
 
 
     def init_chat_engine(self):
