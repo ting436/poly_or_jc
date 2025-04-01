@@ -170,7 +170,7 @@ export default function ChatPage() {
 
   // Render nothing or a loading state until client-side hydration is complete
   if (!isClient) {
-    return <div className="flex flex-col h-[calc(100vh-4rem)] p-4 max-w-4xl mx-auto">
+    return <div className="flex flex-col h-screen p-4 max-w-4xl mx-auto">
       <div className="flex-1 flex items-center justify-center">
         <p>Loading chat...</p>
       </div>
@@ -178,7 +178,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] p-4 max-w-4xl mx-auto relative">
+    <div className="flex flex-col h-[calc(100vh-7rem)] p-4 max-w-4xl mx-auto relative">
       <div className="flex-1 overflow-y-auto mb-4 space-y-4 pb-5 pr-5">
         {messages.map((message, index) => (
           <div
@@ -199,7 +199,7 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2 p-4 fixed bottom-0 bg-rose-50 w-full max-w-4xl mx-auto relative">
+      <form onSubmit={handleSubmit} className="flex gap-2 px-4 py-2 fixed bottom-0 bg-rose-50 w-full max-w-4xl mx-auto relative">
         <input
           type="text"
           value={input}
