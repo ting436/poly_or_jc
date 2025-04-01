@@ -33,6 +33,11 @@ export default function RegisterForm() {
     return emailRegex.test(email);
   };
 
+  const validatePasswordStrength = (password: string) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -46,6 +51,10 @@ export default function RegisterForm() {
 
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
+    }
+    
+    if (formData.password && !validatePasswordStrength(formData.password)) {
+      newErrors.password = "Password must be at least 8 characters long, include uppercase, lowercase, a number, and a special character.";
     }
 
     if (newErrors.name || newErrors.email || newErrors.password || newErrors.confirmPassword || newErrors.school) {
@@ -98,8 +107,8 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="flex justify-center bg-rose-50 py-12">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <div className="flex justify-center bg-rose-50 py-6">
+      <div className="bg-white pt-8 pb-4 px-8 rounded-lg shadow-lg w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-6">Register</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -169,13 +178,25 @@ export default function RegisterForm() {
           </div>
 
           {errors.form && <p className="text-red-500 text-sm mt-1">{errors.form}</p>}
-
+          <div className="mt-6">
           <button
             type="submit"
             className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
           >
             Register
           </button>
+          </div>
+          <div className="text-center">
+            <p className="text-sm">
+              Already have an account?{" "}
+              <a
+                href="/sign-in"
+                className="text-pink-500 hover:underline"
+              >
+                Sign in
+              </a>
+            </p>
+          </div>
         </form>
       </div>
     </div>

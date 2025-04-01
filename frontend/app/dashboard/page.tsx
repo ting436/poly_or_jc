@@ -155,7 +155,7 @@ export default function FormPage() {
       
       if (!hasSelections) {
         setValidationError('Please select at least one consideration')
-        return
+        return;
       }
       
       // Initialize rankings for selected considerations
@@ -209,6 +209,9 @@ export default function FormPage() {
                 </label>
               ))}
             </div>
+            {validationError && (
+              <p className="text-red-500 mt-2">{validationError}</p>
+            )}
           </div>
         )
 

@@ -72,7 +72,6 @@ export default function ChatPage() {
     if (!isClient) return
 
     console.log("Session authenticated, connecting to WebSocket...");
-    const token = session?.user.accessToken;
 
     const connectWebSocket = () => {
       if (wsRef.current?.readyState === WebSocket.OPEN) return
@@ -90,8 +89,8 @@ export default function ChatPage() {
 
         wsRef.current.onopen = () => {
           setIsConnected(true)
-          if (wsRef.current && session?.user.accessToken) {
-            wsRef.current.send(session?.user.accessToken || '');
+          if (wsRef.current && token) {
+            wsRef.current.send(token || '');
           }
           else {
             return
