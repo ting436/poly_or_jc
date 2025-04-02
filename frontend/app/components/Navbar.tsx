@@ -33,7 +33,7 @@ const Navbar = () => {
       <div className="space-x-6 flex items-center">
         <a href="/" className="text-gray-700 hover:text-black">Home</a>
         <button onClick={handleServicesClick} className="text-gray-700 hover:text-black">Services</button>
-        <a href="#" className="text-gray-700 hover:text-black">Contact Us</a>
+        <a href="/contact" className="text-gray-700 hover:text-black">Contact Us</a>
         <button
           onClick={handleSignInOut}
           className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition"
