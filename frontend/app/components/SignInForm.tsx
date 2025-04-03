@@ -16,6 +16,8 @@ export default function SignInForm() {
     password: "",
   });
 
+  const [loading, setLoading] = useState(false); // Add loading state
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setErrors({ ...errors, [e.target.name]: "" }); // Clear the error message when the user starts typing
@@ -38,17 +40,26 @@ export default function SignInForm() {
       return;
     }
 
-    // Use NextAuth.js's signIn function
-    const result = await signIn("credentials", {
-      redirect: false, // Prevent automatic redirection
-      email: formData.email,
-      password: formData.password,
-    });
+    setLoading(true); // Set loading state to true
 
-    if (result?.error) {
-      setErrors({ ...errors, form: result.error }); // Display error message
-    } else {
-      router.push("/dashboard"); // Redirect to dashboard on success
+    try {
+      // Use NextAuth.js's signIn function
+      const result = await signIn("credentials", {
+        redirect: false, // Prevent automatic redirection
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (result?.error) {
+        setErrors({ ...errors, form: result.error }); // Display error message
+      } else {
+        router.push("/dashboard"); // Redirect to dashboard on success
+      }
+    } catch (err) {
+      console.error("Error during sign-in:", err);
+      setErrors({ ...errors, form: "An unexpected error occurred. Please try again." });
+    } finally {
+      setLoading(false); // Re-enable the button
     }
   };
 

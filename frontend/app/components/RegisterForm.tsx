@@ -22,6 +22,7 @@ export default function RegisterForm() {
     confirmPassword: "",
     school: "",
   });
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -61,6 +62,8 @@ export default function RegisterForm() {
       setErrors(newErrors);
       return;
     }
+
+    setLoading(true);
 
     try {
         const response = await fetch("http://localhost:8000/register", {
@@ -103,6 +106,8 @@ export default function RegisterForm() {
     } catch (err) {
         console.error("Error submitting form:", err);
         alert("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -181,9 +186,12 @@ export default function RegisterForm() {
           <div className="mt-6">
           <button
             type="submit"
-            className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
+            className={`w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={loading}
           >
-            Register
+            {loading ? "Processing..." : "Register"}
           </button>
           </div>
           <div className="text-center">

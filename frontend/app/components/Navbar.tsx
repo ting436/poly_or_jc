@@ -5,7 +5,7 @@ import { useSession, signOut } from 'next-auth/react'
 const Navbar = () => {
   const router = useRouter()
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
 
   const handleServicesClick = () => {
     if (pathname === '/dashboard') {
@@ -34,12 +34,21 @@ const Navbar = () => {
         <a href="/" className="text-gray-700 hover:text-black">Home</a>
         <button onClick={handleServicesClick} className="text-gray-700 hover:text-black">Services</button>
         <a href="/contact" className="text-gray-700 hover:text-black">Contact Us</a>
-        <button
-          onClick={handleSignInOut}
-          className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition"
-        >
-          {session ? 'Sign Out' : 'Sign In'}
-        </button>
+        {status === "loading" ? ( // Handle loading state
+          <button
+            className="bg-gray-300 text-gray-500 px-4 py-2 rounded-md cursor-not-allowed"
+            disabled
+          >
+            Loading...
+          </button>
+        ) : (
+          <button
+            onClick={handleSignInOut}
+            className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition"
+          >
+            {session ? 'Sign Out' : 'Sign In'}
+          </button>
+        )}
       </div>
     </nav>
   )

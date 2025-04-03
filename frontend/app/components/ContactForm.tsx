@@ -34,15 +34,15 @@ const ContactPage: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow">
         <div className="flex flex-col md:flex-row">
-          <div className="w-full bg-white p-8 md:p-16 flex flex-col justify-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-8">Contact Us</h1>
+          <div className="w-full bg-white p-6 md:p-8 flex flex-col justify-center">
+            <h1 className="text-xl md:text-3xl font-bold text-gray-900 mb-4">Contact Us</h1>
             
-            <p className="text-gray-700 mb-6">
+            <p className="text-gray-700 mb-4 px-6">
               Want to collaborate? Just share a few details, and we'll be in touch soon. We're
               excited to connect with you!
             </p>
             
-            <div className="mb-8">
+            <div className="mb-4">
               <a href="mailto:email@example.com" className="text-rose-400 hover:text-rose-500">
                 email@example.com
               </a>
@@ -62,7 +62,7 @@ const ContactPage: React.FC = () => {
                       value={formData.firstName}
                       onChange={handleChange}
                       required
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
                     />
                   </div>
                   <div className="w-full">
@@ -74,7 +74,7 @@ const ContactPage: React.FC = () => {
                       value={formData.lastName}
                       onChange={handleChange}
                       required
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
                     />
                   </div>
                 </div>
@@ -91,7 +91,7 @@ const ContactPage: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
                 />
               </div>
               
@@ -106,7 +106,7 @@ const ContactPage: React.FC = () => {
                   onChange={handleChange}
                   required
                   rows={4}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
                 />
               </div>
               
