@@ -103,7 +103,6 @@ class RAG_Chat:
             elif msg.type == "ai":
                 chat_msg = ChatMessage(role=MessageRole.ASSISTANT, content=msg.content)
                 chat_history.append(chat_msg)
-        print(f"hist:{chat_history}")
         return chat_history
 
 

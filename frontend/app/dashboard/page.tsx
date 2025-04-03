@@ -1,12 +1,13 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession } from "next-auth/react";
+import { useSubmission } from './SubmissionContext'
 
 export default function FormPage() {
   const { data: session, status } = useSession();
   const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { isSubmitting, setIsSubmitting } = useSubmission()
   const [step, setStep] = useState(1)
   const [validationError, setValidationError] = useState('')
   const [formData, setFormData] = useState({
@@ -420,6 +421,7 @@ export default function FormPage() {
   }
 
   return (
+    
     <div className="p-8 max-w-4xl mx-auto">
       <form className="space-y-6">
         {renderStep()}
